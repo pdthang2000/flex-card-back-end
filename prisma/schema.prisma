@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Cards {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  word    String?
-  meaning String?
+  id    String  @id @default(auto()) @map("_id") @db.ObjectId
+  front String?
+  back  String?
 }
