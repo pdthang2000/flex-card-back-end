@@ -7,8 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Cards {
-  id    String  @id @default(auto()) @map("_id") @db.ObjectId
-  front String?
-  back  String?
+model Card {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  front           String?
+  back            String?
+  setCardJunction SetCardJunction[]
+}
+
+model Set {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  setCardJunction SetCardJunction[]
+}
+
+model SetCardJunction {
+  id              String  @id @default(auto()) @map("_id") @db.ObjectId
+  cardId          String  @map("card_id")
+  setId           String  @map("set_id")
+  card            Card    @relation(fields: [cardId], references: [id])
+  set             Set     @relation(fields: [setId], references: [id])
 }

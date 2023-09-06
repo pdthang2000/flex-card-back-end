@@ -4,6 +4,7 @@ import {
   ArgumentsHost,
   HttpException,
 } from '@nestjs/common';
+import { ApiStatus } from "../enums";
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter<HttpException> {
@@ -14,9 +15,8 @@ export class HttpExceptionFilter implements ExceptionFilter<HttpException> {
     const message = exception.getResponse();
 
     response.status(status).json({
-      statusCode: status,
+      status: ApiStatus.FAILED,
       message: message,
-      timestamp: new Date().toISOString(),
     });
   }
 }

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { ApiStatus } from "../enums";
 
 @Injectable()
 export class TransformResponseInterceptor implements NestInterceptor {
@@ -16,7 +17,7 @@ export class TransformResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data) => {
           return {
-            success: true,
+            status: ApiStatus.SUCCESS,
             data,
           };
       }),
