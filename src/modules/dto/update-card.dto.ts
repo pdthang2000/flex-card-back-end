@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class CreateCardDto {
+export class UpdateCardDto {
   @IsOptional()
   @IsString()
   front?: string;

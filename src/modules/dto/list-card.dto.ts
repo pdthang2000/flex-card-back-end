@@ -1,5 +1,3 @@
-import { PaginationDto } from "./pagination.dto";
+import { PaginationDto } from './pagination.dto';
 
-export class ListCardDto extends PaginationDto {
-
-}
+export class ListCardDto extends PaginationDto {}

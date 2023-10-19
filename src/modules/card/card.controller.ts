@@ -1,13 +1,23 @@
-import { Body, Controller, Get, Inject, Param, Post, Query } from "@nestjs/common";
-import { CARD_SERVICE, CardService } from "./services/card.service.interface";
-import { CreateCardDto } from "../dto/create-card.dto";
-import { ListCardDto } from "../dto/list-card.dto";
-import { Card } from "@prisma/client";
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { CARD_SERVICE, CardService } from './services/card.service.interface';
+import { CreateCardDto } from '../dto/create-card.dto';
+import { ListCardDto } from '../dto/list-card.dto';
+import { Card } from '@prisma/client';
+import { UpdateCardDto } from '../dto/update-card.dto';
 
 @Controller('/card')
 export class CardController {
-  constructor(@Inject(CARD_SERVICE) private readonly cardService: CardService) {
-  }
+  constructor(
+    @Inject(CARD_SERVICE) private readonly cardService: CardService,
+  ) {}
 
   @Get('/set/:setId')
   async getCardsInSet(@Param('setId') setId: string): Promise<Card[]> {
@@ -21,6 +31,11 @@ export class CardController {
   @Get(':id')
   findCardById(@Param('id') id: string) {
     return this.cardService.findCardById(id);
+  }
+
+  @Post(':id')
+  update(@Param('id') id: string, @Body() data: UpdateCardDto) {
+    return this.cardService.update(id, data);
   }
 
   @Post('')

@@ -1,15 +1,17 @@
-import { CardRepository } from "./card.repository.interface";
-import { PrismaService } from "../../prisma/prisma.service";
-import { Injectable } from "@nestjs/common";
-import { CreateCardDto } from "../../dto/create-card.dto";
-import { ListCardDto } from "../../dto/list-card.dto";
+import { CardRepository } from './card.repository.interface';
+import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { CreateCardDto } from '../../dto/create-card.dto';
+import { ListCardDto } from '../../dto/list-card.dto';
+import { UpdateCardDto } from '../../dto/update-card.dto';
+import { Card } from '@prisma/client';
 
 @Injectable()
 export class CardRepositoryImplement implements CardRepository {
   constructor(private prisma: PrismaService) {}
-  async findCardById(id: string): Promise<any> {
+  async findCard(id: string): Promise<any> {
     return await this.prisma.card.findFirst({
-      where: { id }
+      where: { id },
     });
   }
 
@@ -19,14 +21,28 @@ export class CardRepositoryImplement implements CardRepository {
     });
   }
 
-  async list({
-    skip = 0,
-    take = 20,
-  }: ListCardDto): Promise<any> {
-    return await this.prisma.card.findMany({
-      skip,
+  async list({ page = 0, take = 20 }: ListCardDto): Promise<any> {
+    const where = {};
+
+    const total = await this.prisma.card.count({ where });
+
+    const list = await this.prisma.card.findMany({
+      skip: (page - 1) * take,
       take,
+      where,
     });
+
+    const totalPages = Math.ceil(total / take);
+
+    return {
+      list,
+      pagination: {
+        total,
+        take,
+        page,
+        totalPages,
+      },
+    };
   }
 
   async getCardsInSet(setId: string): Promise<any> {
@@ -39,6 +55,13 @@ export class CardRepositoryImplement implements CardRepository {
       },
     });
 
-    return junctions.map(junction => junction.card);
+    return junctions.map((junction) => junction.card);
+  }
+
+  async updateCard(id: string, data: UpdateCardDto): Promise<Card> {
+    return await this.prisma.card.update({
+      where: { id },
+      data,
+    });
   }
 }
