@@ -24,7 +24,7 @@ export class CardServiceImplement implements CardService {
   ) {}
 
   async findCardById(id: string): Promise<any> {
-    return await this.cardRepo.findCard(id);
+    return await this.cardRepo.getCard(id);
   }
 
   async create(data: CreateCardDto) {
@@ -36,7 +36,12 @@ export class CardServiceImplement implements CardService {
   }
 
   async getCardsInSet(setId: string): Promise<any> {
-    return await this.cardRepo.getCardsInSet(setId);
+    const cards = await this.cardRepo.getCardsInSet(setId);
+    const set = await this.cardRepo.getSet(setId);
+    return {
+      ...set,
+      cards,
+    };
   }
 
   async update(id: string, data: UpdateCardDto): Promise<Card> {

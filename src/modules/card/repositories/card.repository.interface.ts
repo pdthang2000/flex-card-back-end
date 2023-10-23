@@ -1,12 +1,12 @@
 import { CreateCardDto } from '../../dto/create-card.dto';
 import { ListCardDto } from '../../dto/list-card.dto';
 import { UpdateCardDto } from '../../dto/update-card.dto';
-import { Card } from '@prisma/client';
+import { Card, Set } from '@prisma/client';
 
 export const CARD_REPOSITORY = 'CardRepository';
 
 export interface CardRepository {
-  findCard(id: string): Promise<Card>;
+  getCard(id: string): Promise<Card>;
 
   create(data: CreateCardDto): Promise<Card>;
 
@@ -15,4 +15,6 @@ export interface CardRepository {
   updateCard(id: string, data: UpdateCardDto): Promise<Card>;
 
   getCardsInSet(setId: string): Promise<any>;
+
+  getSet(id: string): Promise<Set>;
 }

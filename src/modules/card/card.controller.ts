@@ -20,7 +20,7 @@ export class CardController {
   ) {}
 
   @Get('/set/:setId')
-  async getCardsInSet(@Param('setId') setId: string): Promise<Card[]> {
+  getCardsInSet(@Param('setId') setId: string): Promise<Card[]> {
     return this.cardService.getCardsInSet(setId);
   }
 

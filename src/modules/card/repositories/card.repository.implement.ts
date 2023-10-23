@@ -4,12 +4,12 @@ import { Injectable } from '@nestjs/common';
 import { CreateCardDto } from '../../dto/create-card.dto';
 import { ListCardDto } from '../../dto/list-card.dto';
 import { UpdateCardDto } from '../../dto/update-card.dto';
-import { Card } from '@prisma/client';
+import { Card, Set } from '@prisma/client';
 
 @Injectable()
 export class CardRepositoryImplement implements CardRepository {
   constructor(private prisma: PrismaService) {}
-  async findCard(id: string): Promise<any> {
+  async getCard(id: string): Promise<any> {
     return await this.prisma.card.findFirst({
       where: { id },
     });
@@ -48,7 +48,7 @@ export class CardRepositoryImplement implements CardRepository {
   async getCardsInSet(setId: string): Promise<any> {
     const junctions = await this.prisma.setCardJunction.findMany({
       where: {
-        setId: setId,
+        setId,
       },
       include: {
         card: true,
@@ -63,5 +63,9 @@ export class CardRepositoryImplement implements CardRepository {
       where: { id },
       data,
     });
+  }
+
+  async getSet(id: string): Promise<Set> {
+    return await this.prisma.set.findFirst({ where: { id } });
   }
 }
