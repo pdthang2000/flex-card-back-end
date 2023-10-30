@@ -1,15 +1,15 @@
 import { CardRepository } from './card.repository.interface';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
-import { CreateCardDto } from '../../dto/create-card.dto';
-import { ListCardDto } from '../../dto/list-card.dto';
-import { UpdateCardDto } from '../../dto/update-card.dto';
+import { CreateCardDto } from '../dto/create-card.dto';
+import { ListCardDto } from '../dto/list-card.dto';
+import { UpdateCardDto } from '../dto/update-card.dto';
 import { Card, Set } from '@prisma/client';
 
 @Injectable()
 export class CardRepositoryImplement implements CardRepository {
   constructor(private prisma: PrismaService) {}
-  async getCard(id: string): Promise<any> {
+  async get(id: string): Promise<any> {
     return await this.prisma.card.findFirst({
       where: { id },
     });
@@ -21,7 +21,7 @@ export class CardRepositoryImplement implements CardRepository {
     });
   }
 
-  async list({ page = 0, take = 20 }: ListCardDto): Promise<any> {
+  async list({ page = 1, take = 20 }: ListCardDto): Promise<any> {
     const where = {};
 
     const total = await this.prisma.card.count({ where });

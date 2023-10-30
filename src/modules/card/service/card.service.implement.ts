@@ -2,7 +2,7 @@ import { CardService } from './card.service.interface';
 import {
   CARD_REPOSITORY,
   CardRepository,
-} from '../repositories/card.repository.interface';
+} from '../repository/card.repository.interface';
 import {
   BadRequestException,
   Inject,
@@ -10,9 +10,9 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { CreateCardDto } from '../../dto/create-card.dto';
-import { ListCardDto } from '../../dto/list-card.dto';
-import { UpdateCardDto } from '../../dto/update-card.dto';
+import { CreateCardDto } from '../dto/create-card.dto';
+import { ListCardDto } from '../dto/list-card.dto';
+import { UpdateCardDto } from '../dto/update-card.dto';
 import { Card } from '@prisma/client';
 
 @Injectable()
@@ -23,25 +23,25 @@ export class CardServiceImplement implements CardService {
     @Inject(CARD_REPOSITORY) private readonly cardRepo: CardRepository,
   ) {}
 
-  async findCardById(id: string): Promise<any> {
-    return await this.cardRepo.getCard(id);
+  async get(id: string): Promise<Card> {
+    return await this.cardRepo.get(id);
   }
 
   async create(data: CreateCardDto) {
-    return await this.cardRepo.create(data);
+    try {
+      return await this.cardRepo.create(data);
+    } catch (error) {
+      this.logger.error(`create card: \ndata: ${data}\n${error}`);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   async list(data: ListCardDto): Promise<any> {
     return await this.cardRepo.list(data);
   }
 
-  async getCardsInSet(setId: string): Promise<any> {
-    const cards = await this.cardRepo.getCardsInSet(setId);
-    const set = await this.cardRepo.getSet(setId);
-    return {
-      ...set,
-      cards,
-    };
+  async getCardsInSet(setId: string): Promise<Card[]> {
+    return await this.cardRepo.getCardsInSet(setId);
   }
 
   async update(id: string, data: UpdateCardDto): Promise<Card> {
@@ -52,7 +52,7 @@ export class CardServiceImplement implements CardService {
     try {
       return await this.cardRepo.updateCard(id, data);
     } catch (error) {
-      this.logger.error(`updateCard: id: ${id}\ndata: ${data}\n${error}`);
+      this.logger.error(`update card: id: ${id}\ndata: ${data}\n${error}`);
       throw new InternalServerErrorException(error);
     }
   }

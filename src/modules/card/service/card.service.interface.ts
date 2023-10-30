@@ -1,12 +1,12 @@
-import { CreateCardDto } from '../../dto/create-card.dto';
-import { ListCardDto } from '../../dto/list-card.dto';
-import { UpdateCardDto } from '../../dto/update-card.dto';
+import { CreateCardDto } from '../dto/create-card.dto';
+import { ListCardDto } from '../dto/list-card.dto';
+import { UpdateCardDto } from '../dto/update-card.dto';
 import { Card } from '@prisma/client';
 
 export const CARD_SERVICE = 'CardService';
 
 export interface CardService {
-  findCardById(id: string): Promise<any>;
+  get(id: string): Promise<any>;
 
   create(data: CreateCardDto): Promise<any>;
 
