@@ -4,7 +4,7 @@ import {
   ArgumentsHost,
   HttpException,
 } from '@nestjs/common';
-import { ApiStatus } from "../enums";
+import { ApiStatus } from '../enums';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter<HttpException> {

@@ -14,22 +14,21 @@ model Card {
   setCardJunction SetCardJunction[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
+  @@index([front, back])
 }
 
 model Set {
   id              String            @id @default(auto()) @map("_id") @db.ObjectId
   title           String
+  description     String?
   cardCount       Int
   setCardJunction SetCardJunction[]
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
+  @@index([title])
 }
-
-// model Tag {
-//   id    String   @id @default(auto()) @map("_id") @db.ObjectId
-//   name  String   @unique
-// }
-
 
 model SetCardJunction {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -40,8 +39,13 @@ model SetCardJunction {
   set             Set      @relation(fields: [setId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-}
 
+  @@index([cardId, setId])
+}
+// model Tag {
+//   id    String   @id @default(auto()) @map("_id") @db.ObjectId
+//   name  String   @unique
+// }
 // model TagCardJunction {
 //   id     String @id @default(auto()) @map("_id") @db.ObjectId
 //   cardId String @map("card_id")

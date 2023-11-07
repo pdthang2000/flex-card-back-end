@@ -4,7 +4,10 @@ import { Injectable } from '@nestjs/common';
 import { CreateCardDto } from '../dto/create-card.dto';
 import { ListCardDto } from '../dto/list-card.dto';
 import { UpdateCardDto } from '../dto/update-card.dto';
-import { Card, Set } from '@prisma/client';
+import { Card } from '@prisma/client';
+import { UpdateCardAndJunctionDto } from '../dto/update-card-and-junction.dto';
+import { cloneDeep } from 'lodash';
+import { CreateCardAndJunctionDto } from '../dto/create-card-and-junction.dto';
 
 @Injectable()
 export class CardRepositoryImplement implements CardRepository {
@@ -53,19 +56,60 @@ export class CardRepositoryImplement implements CardRepository {
       include: {
         card: true,
       },
+      orderBy: { orderId: 'asc' },
     });
 
-    return junctions.map((junction) => junction.card);
+    return junctions.map((junction) => ({
+      ...junction.card,
+      orderId: junction.orderId,
+    }));
   }
 
-  async updateCard(id: string, data: UpdateCardDto): Promise<Card> {
+  async update(id: string, data: UpdateCardDto): Promise<Card> {
     return await this.prisma.card.update({
       where: { id },
       data,
     });
   }
 
-  async getSet(id: string): Promise<Set> {
-    return await this.prisma.set.findFirst({ where: { id } });
+  async createWithSetJunction(
+    setId: string,
+    data: CreateCardAndJunctionDto,
+  ): Promise<Card> {
+    return await this.prisma.card.create({
+      data: {
+        ...data.card,
+        setCardJunction: {
+          create: {
+            ...data.setCardJunction,
+            setId,
+          },
+        },
+      },
+    });
+  }
+
+  async updateWithSetJunction(
+    id: string,
+    data: UpdateCardAndJunctionDto,
+  ): Promise<any> {
+    const updateCardData = cloneDeep(data.card);
+    delete updateCardData.id;
+    const junction = await this.prisma.setCardJunction.findFirst({
+      where: { cardId: id },
+    });
+
+    return await this.prisma.card.update({
+      where: { id },
+      data: {
+        ...updateCardData,
+        setCardJunction: {
+          update: {
+            where: { id: junction.id },
+            data: data.setCardJunction,
+          },
+        },
+      },
+    });
   }
 }

@@ -2,7 +2,9 @@ import { SetRepository } from './set.repository.interface';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { Set } from '@prisma/client';
-
+import { CreateSetDto } from '../dto/create-set.dto';
+import { cloneDeep } from 'lodash';
+import { UpdateSetDto } from '../dto/update-set.dto';
 @Injectable()
 export class SetRepositoryImplement implements SetRepository {
   constructor(private prisma: PrismaService) {}
@@ -22,5 +24,40 @@ export class SetRepositoryImplement implements SetRepository {
     return {
       list,
     };
+  }
+
+  async create(data: CreateSetDto): Promise<any> {
+    const cardCount = data.cards.length;
+    const setData = cloneDeep(data);
+    delete setData.cards;
+
+    return await this.prisma.set.create({
+      data: {
+        ...setData,
+        cardCount,
+        setCardJunction: {
+          create: data.cards.map((card, index) => ({
+            orderId: index + 1,
+            card: {
+              create: card,
+            },
+          })),
+        },
+      },
+    });
+  }
+
+  async update(id: string, data: UpdateSetDto): Promise<any> {
+    const cardCount = data.cards.length;
+    const setData = cloneDeep(data);
+    delete setData.cards;
+
+    return await this.prisma.set.update({
+      where: { id },
+      data: {
+        ...setData,
+        cardCount,
+      },
+    });
   }
 }

@@ -50,7 +50,7 @@ export class CardServiceImplement implements CardService {
     }
 
     try {
-      return await this.cardRepo.updateCard(id, data);
+      return await this.cardRepo.update(id, data);
     } catch (error) {
       this.logger.error(`update card: id: ${id}\ndata: ${data}\n${error}`);
       throw new InternalServerErrorException(error);

@@ -1,6 +1,17 @@
-import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+  Body,
+  Patch,
+} from '@nestjs/common';
 import { SET_SERVICE, SetService } from './service/set.service.interface';
 import { ListSetDto } from './dto/list-set.dto';
+import { CreateSetDto } from './dto/create-set.dto';
+import { UpdateSetDto } from './dto/update-set.dto';
 
 @Controller('/set')
 export class SetController {
@@ -14,5 +25,15 @@ export class SetController {
   @Get(':id')
   get(@Param('id') id: string) {
     return this.setService.get(id);
+  }
+
+  @Post('/')
+  create(@Body() data: CreateSetDto) {
+    return this.setService.create(data);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() data: UpdateSetDto) {
+    return this.setService.update(id, data);
   }
 }
