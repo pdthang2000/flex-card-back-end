@@ -4,7 +4,10 @@ import {
   ArgumentsHost,
   HttpException,
 } from '@nestjs/common';
-import { ApiStatus } from '../enums';
+import { ApiStatus, NODE_ENV } from '../enums';
+import * as process from 'process';
+import { config } from 'dotenv';
+config();
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter<HttpException> {
@@ -12,8 +15,12 @@ export class HttpExceptionFilter implements ExceptionFilter<HttpException> {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const status = exception.getStatus();
-    const message = exception.getResponse();
-
+    let message: any;
+    if (process?.env?.NODE_ENV == NODE_ENV.DEV) {
+      message = exception.getResponse();
+    } else {
+      message = 'An error occurred. Please try again later';
+    }
     response.status(status).json({
       status: ApiStatus.FAILED,
       message: message,

@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import {
   SET_REPOSITORY,
   SetRepository,
@@ -12,6 +18,7 @@ import { ListSetDto } from '../dto/list-set.dto';
 import { CreateSetDto } from '../dto/create-set.dto';
 import { UpdateSetDto } from '../dto/update-set.dto';
 import { Card } from '@prisma/client';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class SetServiceImplement implements SetService {
@@ -20,6 +27,7 @@ export class SetServiceImplement implements SetService {
   constructor(
     @Inject(SET_REPOSITORY) private readonly setRepo: SetRepository,
     @Inject(CARD_REPOSITORY) private readonly cardRepo: CardRepository,
+    private prisma: PrismaService,
   ) {}
 
   async get(id: string): Promise<any> {
@@ -43,42 +51,59 @@ export class SetServiceImplement implements SetService {
       const newSet = await this.setRepo.create(data);
       return await this.get(newSet.id);
     } catch (error) {
-      this.logger.error(`Failed to create set:\n${data}\n${error}`);
+      this.logger.error(`create: ${error.message}`, error.stack);
+      this.logger.error(`data:`, JSON.stringify(data));
+      throw new InternalServerErrorException(error.stack);
     }
   }
 
   async update(id: string, data: UpdateSetDto): Promise<any> {
-    await this.setRepo.update(id, data);
-    const cards = await this.cardRepo.getCardsInSet(id);
+    try {
+      await this.prisma.$transaction(async (transactionPrisma) => {
+        const clonedCardRepo: CardRepository = Object.assign(
+          Object.create(Object.getPrototypeOf(this.cardRepo)),
+          this.cardRepo,
+        );
+        clonedCardRepo.assignPrisma(transactionPrisma);
 
-    const cardIdsObj = {};
-    cards.forEach((card: Card) => (cardIdsObj[card.id] = true));
+        await this.setRepo.update(id, data);
+        const cards = await clonedCardRepo.getCardsInSet(id);
 
-    for (let i = 0; i < data.cards.length; ++i) {
-      const card = data.cards[i];
-      if (card?.id) {
-        const updateData = {
-          card,
-          setCardJunction: {
-            orderId: i,
-          },
-        };
-        await this.cardRepo.updateWithSetJunction(card.id, updateData);
-        delete cardIdsObj[card.id];
-      } else {
-        const createData = {
-          card,
-          setCardJunction: {
-            orderId: i,
-          },
-        };
-        await this.cardRepo.createWithSetJunction(id, createData);
-      }
+        const cardIdsObj = {};
+        cards.forEach((card: Card) => (cardIdsObj[card.id] = true));
+
+        for (let i = 0; i < data.cards.length; ++i) {
+          const card = data.cards[i];
+          if (card?.id) {
+            const updateData = {
+              card,
+              setCardJunction: {
+                orderId: i,
+              },
+            };
+            await clonedCardRepo.updateWithSetJunction(card.id, updateData);
+            delete cardIdsObj[card.id];
+          } else {
+            const createData = {
+              card,
+              setCardJunction: {
+                orderId: i,
+              },
+            };
+            await clonedCardRepo.createWithSetJunction(id, createData);
+          }
+        }
+
+        for (const key in cardIdsObj) {
+          await clonedCardRepo.deleteWithSetJunction(key);
+        }
+      });
+
+      return this.get(id);
+    } catch (error) {
+      this.logger.error(`update: ${error.message}`, error.stack);
+      this.logger.error(`setId: ${id}`, JSON.stringify(data));
+      throw new InternalServerErrorException(error.stack);
     }
-    // TODO: Delete redundant cards
-    // Get all cardIds in set
-    // Update cards which have id
-    // Create cards which don't have id
-    // Delete cards don't existed
   }
 }

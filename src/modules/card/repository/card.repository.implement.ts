@@ -12,6 +12,13 @@ import { CreateCardAndJunctionDto } from '../dto/create-card-and-junction.dto';
 @Injectable()
 export class CardRepositoryImplement implements CardRepository {
   constructor(private prisma: PrismaService) {}
+  assignPrisma(prisma: any) {
+    this.prisma = prisma;
+  }
+
+  getPrisma(): PrismaService {
+    return this.prisma;
+  }
   async get(id: string): Promise<any> {
     return await this.prisma.card.findFirst({
       where: { id },
@@ -99,7 +106,7 @@ export class CardRepositoryImplement implements CardRepository {
       where: { cardId: id },
     });
 
-    return await this.prisma.card.update({
+    await this.prisma.card.update({
       where: { id },
       data: {
         ...updateCardData,
@@ -111,5 +118,16 @@ export class CardRepositoryImplement implements CardRepository {
         },
       },
     });
+  }
+
+  async deleteWithSetJunction(id: string): Promise<any> {
+    const junction = await this.prisma.setCardJunction.findFirst({
+      where: { cardId: id },
+    });
+    await this.prisma.setCardJunction.delete({
+      where: { id: junction.id },
+    });
+
+    return await this.prisma.card.delete({ where: { id } });
   }
 }
