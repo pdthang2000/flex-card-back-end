@@ -7,6 +7,7 @@ import {
   Query,
   Body,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { SET_SERVICE, SetService } from './service/set.service.interface';
 import { ListSetDto } from './dto/list-set.dto';
@@ -35,5 +36,10 @@ export class SetController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: UpdateSetDto) {
     return this.setService.update(id, data);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.setService.delete(id);
   }
 }

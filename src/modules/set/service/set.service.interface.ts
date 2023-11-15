@@ -11,4 +11,6 @@ export interface SetService {
   create(data: CreateSetDto): Promise<any>;
 
   update(id: string, data: UpdateSetDto): Promise<any>;
+
+  delete(id: string): Promise<any>;
 }

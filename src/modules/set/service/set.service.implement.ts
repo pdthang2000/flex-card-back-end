@@ -1,5 +1,4 @@
 import {
-  HttpException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -19,6 +18,7 @@ import { CreateSetDto } from '../dto/create-set.dto';
 import { UpdateSetDto } from '../dto/update-set.dto';
 import { Card } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { cloneDeep } from 'lodash';
 
 @Injectable()
 export class SetServiceImplement implements SetService {
@@ -29,11 +29,15 @@ export class SetServiceImplement implements SetService {
     @Inject(CARD_REPOSITORY) private readonly cardRepo: CardRepository,
     private prisma: PrismaService,
   ) {}
+  assignPrisma(prisma: any) {
+    this.prisma = prisma;
+  }
+
+  getPrisma(): PrismaService {
+    return this.prisma;
+  }
 
   async get(id: string): Promise<any> {
-    // const delay = (ms: number) =>
-    //   new Promise((resolve) => setTimeout(resolve, ms));
-    // await delay(2000);
     const cards = await this.cardRepo.getCardsInSet(id);
     const set = await this.setRepo.get(id);
     return {
@@ -60,10 +64,7 @@ export class SetServiceImplement implements SetService {
   async update(id: string, data: UpdateSetDto): Promise<any> {
     try {
       await this.prisma.$transaction(async (transactionPrisma) => {
-        const clonedCardRepo: CardRepository = Object.assign(
-          Object.create(Object.getPrototypeOf(this.cardRepo)),
-          this.cardRepo,
-        );
+        const clonedCardRepo: CardRepository = cloneDeep(this.cardRepo);
         clonedCardRepo.assignPrisma(transactionPrisma);
 
         await this.setRepo.update(id, data);
@@ -103,6 +104,28 @@ export class SetServiceImplement implements SetService {
     } catch (error) {
       this.logger.error(`update: ${error.message}`, error.stack);
       this.logger.error(`setId: ${id}`, JSON.stringify(data));
+      throw new InternalServerErrorException(error.stack);
+    }
+  }
+
+  async delete(id: string): Promise<any> {
+    try {
+      await this.prisma.$transaction(async (transactionPrisma) => {
+        const clonedCardRepo: CardRepository = cloneDeep(this.cardRepo);
+        const clonedSetRepo: SetRepository = cloneDeep(this.setRepo);
+        clonedCardRepo.assignPrisma(transactionPrisma);
+        clonedSetRepo.assignPrisma(transactionPrisma);
+
+        const cards = await clonedCardRepo.getCardsInSet(id);
+        const cardIds = cards.map((card: Card) => card.id);
+
+        await clonedSetRepo.deleteJunctions(id);
+        await clonedCardRepo.deleteMany(cardIds);
+        await clonedSetRepo.delete(id);
+      });
+    } catch (error) {
+      this.logger.error(`delete: ${error.message}`, error.stack);
+      this.logger.error(`setId: ${id}`);
       throw new InternalServerErrorException(error.stack);
     }
   }

@@ -13,25 +13,29 @@ export interface CardRepository {
 
   getPrisma(): PrismaService;
 
-  get(id: string): Promise<Card>;
-
-  create(data: CreateCardDto): Promise<Card>;
-
   list(data: ListCardDto): Promise<any>;
 
-  update(id: string, data: UpdateCardDto): Promise<Card>;
+  get(id: string): Promise<Card>;
 
   getCardsInSet(setId: string): Promise<any>;
 
-  deleteWithSetJunction(id: string): Promise<any>;
+  create(data: CreateCardDto): Promise<Card>;
+
+  createWithSetJunction(
+    setId: string,
+    data: CreateCardAndJunctionDto,
+  ): Promise<Card>;
+
+  update(id: string, data: UpdateCardDto): Promise<Card>;
 
   updateWithSetJunction(
     id: string,
     data: UpdateCardAndJunctionDto,
   ): Promise<any>;
 
-  createWithSetJunction(
-    setId: string,
-    data: CreateCardAndJunctionDto,
-  ): Promise<Card>;
+  delete(id: string): Promise<any>;
+
+  deleteMany(ids: string[]): Promise<any>;
+
+  deleteWithSetJunction(id: string): Promise<any>;
 }

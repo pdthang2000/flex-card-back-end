@@ -19,17 +19,6 @@ export class CardRepositoryImplement implements CardRepository {
   getPrisma(): PrismaService {
     return this.prisma;
   }
-  async get(id: string): Promise<any> {
-    return await this.prisma.card.findFirst({
-      where: { id },
-    });
-  }
-
-  async create(data: CreateCardDto) {
-    return await this.prisma.card.create({
-      data,
-    });
-  }
 
   async list({ page = 1, take = 20 }: ListCardDto): Promise<any> {
     const where = {};
@@ -55,6 +44,12 @@ export class CardRepositoryImplement implements CardRepository {
     };
   }
 
+  async get(id: string): Promise<any> {
+    return await this.prisma.card.findFirst({
+      where: { id },
+    });
+  }
+
   async getCardsInSet(setId: string): Promise<any> {
     const junctions = await this.prisma.setCardJunction.findMany({
       where: {
@@ -72,9 +67,8 @@ export class CardRepositoryImplement implements CardRepository {
     }));
   }
 
-  async update(id: string, data: UpdateCardDto): Promise<Card> {
-    return await this.prisma.card.update({
-      where: { id },
+  async create(data: CreateCardDto) {
+    return await this.prisma.card.create({
       data,
     });
   }
@@ -93,6 +87,13 @@ export class CardRepositoryImplement implements CardRepository {
           },
         },
       },
+    });
+  }
+
+  async update(id: string, data: UpdateCardDto): Promise<Card> {
+    return await this.prisma.card.update({
+      where: { id },
+      data,
     });
   }
 
@@ -120,6 +121,10 @@ export class CardRepositoryImplement implements CardRepository {
     });
   }
 
+  async delete(id: string): Promise<any> {
+    return await this.prisma.card.delete({ where: { id } });
+  }
+
   async deleteWithSetJunction(id: string): Promise<any> {
     const junction = await this.prisma.setCardJunction.findFirst({
       where: { cardId: id },
@@ -129,5 +134,9 @@ export class CardRepositoryImplement implements CardRepository {
     });
 
     return await this.prisma.card.delete({ where: { id } });
+  }
+
+  async deleteMany(ids: string[]): Promise<any> {
+    return await this.prisma.card.deleteMany({ where: { id: { in: ids } } });
   }
 }

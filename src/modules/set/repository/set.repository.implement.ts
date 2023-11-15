@@ -8,6 +8,15 @@ import { UpdateSetDto } from '../dto/update-set.dto';
 @Injectable()
 export class SetRepositoryImplement implements SetRepository {
   constructor(private prisma: PrismaService) {}
+
+  assignPrisma(prisma: any) {
+    this.prisma = prisma;
+  }
+
+  getPrisma(): PrismaService {
+    return this.prisma;
+  }
+
   async get(id: string): Promise<Set> {
     return await this.prisma.set.findFirst({ where: { id } });
   }
@@ -58,6 +67,16 @@ export class SetRepositoryImplement implements SetRepository {
         ...setData,
         cardCount,
       },
+    });
+  }
+
+  async delete(id: string): Promise<any> {
+    return await this.prisma.set.delete({ where: { id } });
+  }
+
+  async deleteJunctions(setId: string): Promise<any> {
+    return await this.prisma.setCardJunction.deleteMany({
+      where: { setId },
     });
   }
 }
