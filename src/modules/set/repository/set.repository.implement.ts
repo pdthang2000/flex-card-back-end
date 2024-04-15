@@ -17,8 +17,8 @@ export class SetRepositoryImplement implements SetRepository {
     return this.prisma;
   }
 
-  async get(id: string): Promise<Set> {
-    return await this.prisma.set.findFirst({ where: { id } });
+  get(id: string): Promise<Set> {
+    return this.prisma.set.findFirst({ where: { id } });
   }
 
   async list({ page = 1, take = 20 }: any): Promise<any> {
@@ -35,12 +35,12 @@ export class SetRepositoryImplement implements SetRepository {
     };
   }
 
-  async create(data: CreateSetDto): Promise<any> {
+  create(data: CreateSetDto): Promise<any> {
     const cardCount = data.cards.length;
     const setData = cloneDeep(data);
     delete setData.cards;
 
-    return await this.prisma.set.create({
+    return this.prisma.set.create({
       data: {
         ...setData,
         cardCount,
@@ -56,12 +56,12 @@ export class SetRepositoryImplement implements SetRepository {
     });
   }
 
-  async update(id: string, data: UpdateSetDto): Promise<any> {
+  update(id: string, data: UpdateSetDto): Promise<any> {
     const cardCount = data.cards.length;
     const setData = cloneDeep(data);
     delete setData.cards;
 
-    return await this.prisma.set.update({
+    return this.prisma.set.update({
       where: { id },
       data: {
         ...setData,
@@ -70,12 +70,12 @@ export class SetRepositoryImplement implements SetRepository {
     });
   }
 
-  async delete(id: string): Promise<any> {
-    return await this.prisma.set.delete({ where: { id } });
+  delete(id: string): Promise<any> {
+    return this.prisma.set.delete({ where: { id } });
   }
 
-  async deleteJunctions(setId: string): Promise<any> {
-    return await this.prisma.setCardJunction.deleteMany({
+  deleteJunctions(setId: string): Promise<any> {
+    return this.prisma.setCardJunction.deleteMany({
       where: { setId },
     });
   }

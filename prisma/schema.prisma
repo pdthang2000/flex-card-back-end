@@ -15,7 +15,8 @@ model Card {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  @@index([front, back])
+  @@index([front])
+  @@index([back])
 }
 
 model Set {
@@ -32,15 +33,16 @@ model Set {
 
 model SetCardJunction {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  cardId          String   @map("card_id")
-  setId           String   @map("set_id")
+  cardId          String   @map("cardId") @db.ObjectId
+  setId           String   @map("setId") @db.ObjectId
   orderId         Int
   card            Card     @relation(fields: [cardId], references: [id])
   set             Set      @relation(fields: [setId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@index([cardId, setId])
+  @@index([cardId])
+  @@index([setId])
 }
 // model Tag {
 //   id    String   @id @default(auto()) @map("_id") @db.ObjectId
