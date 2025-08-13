@@ -7,51 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Card {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  front           String?
-  back            String?
-  setCardJunction SetCardJunction[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  @@index([front])
-  @@index([back])
+model User {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  email      String      @unique
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  flashcards Flashcard[]
+  tags       Tag[]
 }
 
-model Set {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  title           String
-  description     String?
-  cardCount       Int
-  setCardJunction SetCardJunction[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  @@index([title])
+model Flashcard {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  front     String
+  back      String
+  createdBy String         @map("createdBy") @db.ObjectId
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+  // Relations
+  user      User           @relation(fields: [createdBy], references: [id])
+  tags      FlashcardTag[]
 }
 
-model SetCardJunction {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  cardId          String   @map("cardId") @db.ObjectId
-  setId           String   @map("setId") @db.ObjectId
-  orderId         Int
-  card            Card     @relation(fields: [cardId], references: [id])
-  set             Set      @relation(fields: [setId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Tag {
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  createdBy  String         @map("createdBy") @db.ObjectId
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  deletedAt  DateTime?
+  // Relations
+  user       User           @relation(fields: [createdBy], references: [id])
+  flashcards FlashcardTag[]
 
-  @@index([cardId])
-  @@index([setId])
+  @@unique([createdBy, name]) // Tag name unique per user
 }
-// model Tag {
-//   id    String   @id @default(auto()) @map("_id") @db.ObjectId
-//   name  String   @unique
-// }
-// model TagCardJunction {
-//   id     String @id @default(auto()) @map("_id") @db.ObjectId
-//   cardId String @map("card_id")
-//   tagId  String @map("tag_id")
-//   card   Card   @relation(fields: [cardId], references: [id])
-//   tag    Tag    @relation(fields: [tagId], references: [id])
-// }
+
+model FlashcardTag {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  flashcardId String   @map("flashcardId") @db.ObjectId
+  tagId       String   @map("tagId") @db.ObjectId
+  createdAt   DateTime @default(now())
+
+  // Relations
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id])
+  tag       Tag       @relation(fields: [tagId], references: [id])
+
+  @@unique([flashcardId, tagId])
+}

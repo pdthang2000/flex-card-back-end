@@ -1,20 +1,18 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CardModule } from './modules/card/card.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { config } from 'dotenv';
 import * as process from 'process';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/http-exception-filter.filter';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response-interceptor.interceptor';
-import { SetModule } from './modules/set/set.module';
+import { FlashcardsModule } from './modules/flashcards/flashcards.module';
 config();
 @Module({
   imports: [
-    CardModule,
-    SetModule,
     MongooseModule.forRoot(process?.env?.DATABASE_URL),
+    FlashcardsModule,
   ],
   controllers: [AppController],
   providers: [
