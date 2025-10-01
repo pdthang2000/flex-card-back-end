@@ -57,4 +57,25 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
       },
     });
   }
+
+  async findManyByUser(userId: string, skip = 0, take = 20) {
+    const rows = await this.prisma.flashcard.findMany({
+      where: { createdBy: userId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+    return rows.map(
+      (row) =>
+        new Flashcard(
+          row.id,
+          row.front,
+          row.back,
+          row.createdBy,
+          row.createdAt,
+          row.updatedAt,
+          row.deletedAt,
+        ),
+    );
+  }
 }

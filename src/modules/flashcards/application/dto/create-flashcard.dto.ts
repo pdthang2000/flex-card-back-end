@@ -1,6 +1,12 @@
+import { IsString, MaxLength } from 'class-validator';
+
 export class CreateFlashcardDto {
-  id: string; // Or omit and generate inside service
+  @IsString()
+  @MaxLength(100)
   front: string;
+
+  @IsString()
+  @MaxLength(100)
   back: string;
   // Optional: tags?: string[]
 }

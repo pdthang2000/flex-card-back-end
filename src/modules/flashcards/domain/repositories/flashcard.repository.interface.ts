@@ -6,5 +6,9 @@ export interface FlashcardRepository {
   findByIdAndUser(id: string, userId: string): Promise<Flashcard | null>;
   create(flashcard: Flashcard): Promise<Flashcard>;
   update(flashcard: Flashcard): Promise<void>;
-  // Add more as needed (delete, list, etc.)
+  findManyByUser(
+    userId: string,
+    skip: number,
+    take: number,
+  ): Promise<Flashcard[]>;
 }

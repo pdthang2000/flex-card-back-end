@@ -62,5 +62,9 @@ export class FlashcardService {
     return true;
   }
 
+  async list(userId: string, skip: number, take: number) {
+    return this.flashcardRepo.findManyByUser(userId, skip, take);
+  }
+
   // Add more use cases: restore, assignTag, removeTag, etc.
 }

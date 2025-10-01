@@ -6,6 +6,8 @@ import {
   Patch,
   Delete,
   Request,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { FlashcardService } from '../../application/services/flashcard.service';
 import { CreateFlashcardDto } from '../../application/dto/create-flashcard.dto';
@@ -13,6 +15,14 @@ import { CreateFlashcardDto } from '../../application/dto/create-flashcard.dto';
 @Controller('flashcard')
 export class FlashcardController {
   constructor(private readonly flashcardService: FlashcardService) {}
+
+  @Get()
+  list(@Request() req: any, @Query('page') page = 1, @Query('size') size = 20) {
+    // const userId = req.user?.id;
+    const userId = '665ed96611f0733b07cc2df6';
+    const skip = (page - 1) * size;
+    return this.flashcardService.list(req?.user?.id ?? userId, skip, size);
+  }
 
   @Post()
   async create(@Request() req: any, @Body() dto: CreateFlashcardDto) {
