@@ -1,9 +1,17 @@
 export const FLASHCARD_TAG_REPOSITORY = 'FlashcardTagRepository';
 
 export interface FlashcardTagRepository {
-  add(flashcardId: string, tagId: string): Promise<void>; // id pair created (unique)
+  listTagIdsForFlashcard(flashcardId: string): Promise<string[]>;
 
-  remove(flashcardId: string, tagId: string): Promise<void>; // id pair deleted
+  listFlashcardIdsByTag(
+    tagId: string,
+    skip?: number,
+    take?: number,
+  ): Promise<string[]>;
+
+  add(flashcardId: string, tagId: string): Promise<void>;
+
+  remove(flashcardId: string, tagId: string): Promise<void>;
 
   removeAllForFlashcard(flashcardId: string): Promise<void>; // used by flashcard soft-delete
 
@@ -11,13 +19,7 @@ export interface FlashcardTagRepository {
 
   countForFlashcard(flashcardId: string): Promise<number>;
 
+  countByTag(tagId: string): Promise<number>;
+
   exists(flashcardId: string, tagId: string): Promise<boolean>;
-
-  listTagIdsForFlashcard(flashcardId: string): Promise<string[]>; // for display/restore
-
-  listFlashcardIdsByTag(
-    tagId: string,
-    skip?: number,
-    take?: number,
-  ): Promise<string[]>; // reverse lookup
 }

@@ -131,9 +131,36 @@ export class FlashcardService {
     return flashcard;
   }
 
-  async list(userId: string, skip: number, take: number) {
+  async list(userId: string, skip = 1, take = 20) {
     return this.flashcardRepo.findManyByUser(userId, skip, take);
   }
 
-  // Add more use cases: restore, assignTag, removeTag, etc.
+  async listByTag(userId: string, tagId: string, page = 1, size = 20) {
+    const tag = await this.tagRepo.findByIdAndUser(tagId, userId);
+    if (!tag || !tag.isActive()) {
+      throw new NotFoundException('Tag not found');
+    }
+
+    const p = Math.max(1, Number(page));
+    const s = Math.max(1, Math.min(100, Number(size)));
+    const skip = (p - 1) * s;
+
+    const total = await this.flashcardTagRepo.countByTag(tagId);
+
+    const flashcardIds = await this.flashcardTagRepo.listFlashcardIdsByTag(
+      tagId,
+      skip,
+      s,
+    );
+    const items = await this.flashcardRepo.findManyByIdsAndUser(
+      flashcardIds,
+      userId,
+    );
+
+    return {
+      tag,
+      pagination: { page: p, size: s, total },
+      items,
+    };
+  }
 }

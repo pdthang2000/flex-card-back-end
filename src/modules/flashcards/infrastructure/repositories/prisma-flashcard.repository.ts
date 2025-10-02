@@ -9,7 +9,7 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
 
   async findByIdAndUser(id: string, userId: string): Promise<Flashcard | null> {
     const data = await this.prisma.flashcard.findFirst({
-      where: { id, createdBy: userId },
+      where: { id, createdBy: userId, deletedAt: null },
     });
     if (!data) return null;
     return new Flashcard(
@@ -75,6 +75,29 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
           row.createdAt,
           row.updatedAt,
           row.deletedAt,
+        ),
+    );
+  }
+
+  async findManyByIdsAndUser(
+    ids: string[],
+    userId: string,
+  ): Promise<Flashcard[]> {
+    if (!ids.length) return [];
+    const rows = await this.prisma.flashcard.findMany({
+      where: { id: { in: ids }, createdBy: userId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(
+      (row) =>
+        new Flashcard(
+          row.id,
+          row.front,
+          row.back,
+          row.createdBy,
+          row.createdAt,
+          row.updatedAt,
+          row.deletedAt ?? null,
         ),
     );
   }

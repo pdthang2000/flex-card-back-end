@@ -58,4 +58,8 @@ export class PrismaFlashcardTagRepository implements FlashcardTagRepository {
     });
     return rows.map((row) => row.flashcardId);
   }
+
+  async countByTag(tagId: string): Promise<number> {
+    return this.prisma.flashcardTag.count({ where: { tagId } });
+  }
 }
