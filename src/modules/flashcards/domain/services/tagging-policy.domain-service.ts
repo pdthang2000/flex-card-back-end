@@ -22,9 +22,8 @@ export class TaggingPolicy {
    * Typically only guards that the card exists and isn’t deleted.
    * (Removal should be idempotent; missing link is OK.)
    */
-  static ensureCanRemove(params: { cardActive: boolean; tagActive: boolean }) {
-    const { cardActive, tagActive } = params;
+  static ensureCanRemove(params: { cardActive: boolean }) {
+    const { cardActive } = params;
     if (!cardActive) throw new Error('Flashcard is deleted');
-    if (!tagActive) throw new Error('Tag is deleted');
   }
 }

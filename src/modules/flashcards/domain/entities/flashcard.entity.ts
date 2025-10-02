@@ -1,4 +1,5 @@
 const CONTENT_MAX_LENGTH = 100;
+
 export class Flashcard {
   constructor(
     public readonly id: string | null,

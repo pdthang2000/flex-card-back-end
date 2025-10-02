@@ -11,17 +11,17 @@ import {
 } from '@nestjs/common';
 import { FlashcardService } from '../../application/services/flashcard.service';
 import { CreateFlashcardDto } from '../../application/dto/create-flashcard.dto';
+import { PaginationDto } from '../../../../dto/pagination.dto';
 
 @Controller('flashcard')
 export class FlashcardController {
   constructor(private readonly flashcardService: FlashcardService) {}
 
   @Get()
-  list(@Request() req: any, @Query('page') page = 1, @Query('size') size = 20) {
+  list(@Request() req: any, @Query() { page, size }: PaginationDto) {
     // const userId = req.user?.id;
     const userId = '665ed96611f0733b07cc2df6';
-    const skip = (page - 1) * size;
-    return this.flashcardService.list(req?.user?.id ?? userId, skip, size);
+    return this.flashcardService.list(req?.user?.id ?? userId, page, size);
   }
 
   @Post()

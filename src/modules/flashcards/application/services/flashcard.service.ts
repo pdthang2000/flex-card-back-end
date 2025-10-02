@@ -19,6 +19,7 @@ import {
   FlashcardTagRepository,
 } from '../../domain/repositories/flashcard-tag.repository.interface';
 import { TaggingPolicy } from '../../domain/services/tagging-policy.domain-service';
+import { normalizePagination } from '../../../../common/utils/pagination.helper';
 
 @Injectable()
 export class FlashcardService {
@@ -78,7 +79,6 @@ export class FlashcardService {
     try {
       TaggingPolicy.ensureCanRemove({
         cardActive: card.isActive(),
-        tagActive: tag.isActive(),
       });
     } catch (e: any) {
       throw new BadRequestException(e?.message ?? 'Cannot remove tag');
@@ -131,26 +131,25 @@ export class FlashcardService {
     return flashcard;
   }
 
-  async list(userId: string, skip = 1, take = 20) {
+  async list(userId: string, rawPage = 1, rawSize = 20) {
+    const { skip, take } = normalizePagination(rawPage, rawSize);
     return this.flashcardRepo.findManyByUser(userId, skip, take);
   }
 
-  async listByTag(userId: string, tagId: string, page = 1, size = 20) {
+  async listByTag(userId: string, tagId: string, rawPage = 1, rawSize = 20) {
     const tag = await this.tagRepo.findByIdAndUser(tagId, userId);
     if (!tag || !tag.isActive()) {
       throw new NotFoundException('Tag not found');
     }
 
-    const p = Math.max(1, Number(page));
-    const s = Math.max(1, Math.min(100, Number(size)));
-    const skip = (p - 1) * s;
+    const { page, size, skip } = normalizePagination(rawPage, rawSize);
 
     const total = await this.flashcardTagRepo.countByTag(tagId);
 
     const flashcardIds = await this.flashcardTagRepo.listFlashcardIdsByTag(
       tagId,
       skip,
-      s,
+      size,
     );
     const items = await this.flashcardRepo.findManyByIdsAndUser(
       flashcardIds,
@@ -159,7 +158,7 @@ export class FlashcardService {
 
     return {
       tag,
-      pagination: { page: p, size: s, total },
+      pagination: { page, size, total },
       items,
     };
   }
