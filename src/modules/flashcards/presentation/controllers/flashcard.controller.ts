@@ -31,6 +31,26 @@ export class FlashcardController {
     const userId = '665ed96611f0733b07cc2df6';
     return this.flashcardService.create(userId, dto);
   }
+
+  @Post(':id/tags/:tagId')
+  assignTag(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('tagId') tagId: string,
+  ) {
+    const userId = '665ed96611f0733b07cc2df6';
+    return this.flashcardService.assignTag(req?.user?.id ?? userId, id, tagId);
+  }
+
+  @Delete(':id/tags/:tagId')
+  removeTag(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('tagId') tagId: string,
+  ) {
+    const userId = '665ed96611f0733b07cc2df6';
+    return this.flashcardService.removeTag(req?.user?.id ?? userId, id, tagId);
+  }
   //
   // @Get(':id')
   // async getOne(@Request() req: any, @Param('id') id: string) {

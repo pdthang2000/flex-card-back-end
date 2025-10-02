@@ -8,6 +8,8 @@ import { FlashcardController } from './presentation/controllers/flashcard.contro
 import { PrismaModule } from '../../shared/prisma.module';
 import { TagController } from './presentation/controllers/tag.controller';
 import { TagService } from './application/services/tag.service';
+import { FLASHCARD_TAG_REPOSITORY } from './domain/repositories/flashcard-tag.repository.interface';
+import { PrismaFlashcardTagRepository } from './infrastructure/repositories/prisma-flashcard-tag.repository';
 
 @Module({
   imports: [PrismaModule],
@@ -21,6 +23,10 @@ import { TagService } from './application/services/tag.service';
     {
       provide: TAG_REPOSITORY,
       useClass: PrismaTagRepository,
+    },
+    {
+      provide: FLASHCARD_TAG_REPOSITORY,
+      useClass: PrismaFlashcardTagRepository,
     },
   ],
   exports: [FlashcardService, TagService],
