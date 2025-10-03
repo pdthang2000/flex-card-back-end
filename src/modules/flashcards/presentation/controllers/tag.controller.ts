@@ -14,6 +14,7 @@ import { CreateTagDto } from '../../application/dto/create-tag.dto';
 import { RenameTagDto } from '../../application/dto/rename-tag.dto';
 import { ListFlashcardsInTagQueryDto } from '../../application/dto/list-flashcards-in-tag.query';
 import { FlashcardService } from '../../application/services/flashcard.service';
+import { PaginationDto } from '../../../../dto/pagination.dto';
 
 @Controller('tag')
 export class TagController {
@@ -23,8 +24,9 @@ export class TagController {
   ) {}
 
   @Get()
-  list(@Request() req: any) {
-    return this.tagService.listTags(req.user.id);
+  list(@Request() req: any, @Query() { page, size }: PaginationDto) {
+    const userId = req?.user?.id ?? '665ed96611f0733b07cc2df6';
+    return this.tagService.listTags(userId, page, size);
   }
 
   @Get(':id/flashcards')

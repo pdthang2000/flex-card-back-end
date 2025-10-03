@@ -55,4 +55,20 @@ export class PrismaTagRepository implements TagRepository {
       },
     });
   }
+
+  async findAllByUser(userId: string, skip = 0, take = 20): Promise<Tag[]> {
+    const rows = await this.prisma.tag.findMany({
+      where: { createdBy: userId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    });
+    return rows.map(mapDbToDomain);
+  }
+
+  async countByUser(userId: string): Promise<number> {
+    return this.prisma.tag.count({
+      where: { createdBy: userId, deletedAt: null },
+    });
+  }
 }
