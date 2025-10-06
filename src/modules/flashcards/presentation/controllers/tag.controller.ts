@@ -15,6 +15,7 @@ import { RenameTagDto } from '../../application/dto/rename-tag.dto';
 import { ListFlashcardsInTagQueryDto } from '../../application/dto/list-flashcards-in-tag.query';
 import { FlashcardService } from '../../application/services/flashcard.service';
 import { PaginationDto } from '../../../../dto/pagination.dto';
+import { ValidateObjectIdMongodb } from '../../../../common/pipes/validate-object-id-mongodb';
 
 @Controller('tag')
 export class TagController {
@@ -32,7 +33,7 @@ export class TagController {
   @Get(':id/flashcards')
   listFlashcardsInTag(
     @Request() req: any,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdMongodb) id: string,
     @Query() query: ListFlashcardsInTagQueryDto,
   ) {
     const userId = '665ed96611f0733b07cc2df6';
@@ -53,14 +54,17 @@ export class TagController {
   @Patch(':id')
   rename(
     @Request() req: any,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdMongodb) id: string,
     @Body() dto: RenameTagDto,
   ) {
     return this.tagService.renameTag(req.user.id, id, dto.name);
   }
 
   @Delete(':id')
-  remove(@Request() req: any, @Param('id') id: string) {
+  remove(
+    @Request() req: any,
+    @Param('id', ValidateObjectIdMongodb) id: string,
+  ) {
     return this.tagService.deleteTag(req.user.id, id);
   }
 }

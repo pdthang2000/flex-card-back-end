@@ -12,6 +12,7 @@ import {
 import { FlashcardService } from '../../application/services/flashcard.service';
 import { CreateFlashcardDto } from '../../application/dto/create-flashcard.dto';
 import { PaginationDto } from '../../../../dto/pagination.dto';
+import { ValidateObjectIdMongodb } from '../../../../common/pipes/validate-object-id-mongodb';
 
 @Controller('flashcard')
 export class FlashcardController {
@@ -35,8 +36,8 @@ export class FlashcardController {
   @Post(':id/tags/:tagId')
   assignTag(
     @Request() req: any,
-    @Param('id') id: string,
-    @Param('tagId') tagId: string,
+    @Param('id', ValidateObjectIdMongodb) id: string,
+    @Param('tagId', ValidateObjectIdMongodb) tagId: string,
   ) {
     const userId = '665ed96611f0733b07cc2df6';
     return this.flashcardService.assignTag(req?.user?.id ?? userId, id, tagId);
@@ -45,7 +46,7 @@ export class FlashcardController {
   @Delete(':id/tags/:tagId')
   removeTag(
     @Request() req: any,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdMongodb) id: string,
     @Param('tagId') tagId: string,
   ) {
     const userId = '665ed96611f0733b07cc2df6';
@@ -63,7 +64,7 @@ export class FlashcardController {
   @Patch(':id')
   async edit(
     @Request() req: any,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdMongodb) id: string,
     @Body() body: { front: string; back: string },
   ) {
     const userId = req.user?.id;
@@ -71,7 +72,10 @@ export class FlashcardController {
   }
 
   @Delete(':id')
-  async softDelete(@Request() req: any, @Param('id') id: string) {
+  async softDelete(
+    @Request() req: any,
+    @Param('id', ValidateObjectIdMongodb) id: string,
+  ) {
     const userId = req.user?.id;
     await this.flashcardService.softDelete(userId, id);
     return { success: true };

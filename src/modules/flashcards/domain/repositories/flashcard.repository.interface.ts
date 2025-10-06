@@ -16,4 +16,6 @@ export interface FlashcardRepository {
   create(flashcard: Flashcard): Promise<Flashcard>;
 
   update(flashcard: Flashcard): Promise<void>;
+
+  count(): Promise<number>;
 }

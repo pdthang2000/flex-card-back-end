@@ -10,6 +10,7 @@ import {
 } from '../../domain/repositories/tag.repository.interface';
 import { Tag } from '../../domain/entities/tag.entity';
 import { normalizePagination } from '../../../../common/utils/pagination.helper';
+import { PaginatedResult } from '../../../../common/types/pagination-result.type';
 
 @Injectable()
 export class TagService {
@@ -55,7 +56,11 @@ export class TagService {
     // Optionally: remove tag assignments from flashcards in another use case
   }
 
-  async listTags(userId: string, rawPage = 1, rawSize = 20) {
+  async listTags(
+    userId: string,
+    rawPage = 1,
+    rawSize = 20,
+  ): Promise<PaginatedResult<Tag>> {
     const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
     const [items, total] = await Promise.all([
       this.tagRepo.findAllByUser(userId, skip, take),

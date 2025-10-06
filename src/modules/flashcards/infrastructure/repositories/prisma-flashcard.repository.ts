@@ -101,4 +101,8 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
         ),
     );
   }
+
+  async count(): Promise<number> {
+    return await this.prisma.flashcard.count({});
+  }
 }

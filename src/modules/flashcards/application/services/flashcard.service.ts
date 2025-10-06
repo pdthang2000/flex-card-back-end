@@ -20,6 +20,8 @@ import {
 } from '../../domain/repositories/flashcard-tag.repository.interface';
 import { TaggingPolicy } from '../../domain/services/tagging-policy.domain-service';
 import { normalizePagination } from '../../../../common/utils/pagination.helper';
+import { ListAllFlashcardsInTag } from '../../../../common/types/tag.type';
+import { PaginatedResult } from '../../../../common/types/pagination-result.type';
 
 @Injectable()
 export class FlashcardService {
@@ -32,7 +34,11 @@ export class FlashcardService {
     private readonly flashcardTagRepo: FlashcardTagRepository,
   ) {}
 
-  async assignTag(userId: string, flashcardId: string, tagId: string) {
+  async assignTag(
+    userId: string,
+    flashcardId: string,
+    tagId: string,
+  ): Promise<void> {
     const card = await this.flashcardRepo.findByIdAndUser(flashcardId, userId);
     if (!card || !card.isActive())
       throw new NotFoundException('Flashcard not found');
@@ -44,7 +50,10 @@ export class FlashcardService {
       flashcardId,
       tagId,
     );
-    if (alreadyLinked) return { idempotent: true };
+    if (alreadyLinked) {
+      // Could add log for { idempotent: true };
+      return;
+    }
 
     const count = await this.flashcardTagRepo.countForFlashcard(flashcardId);
 
@@ -63,12 +72,19 @@ export class FlashcardService {
     try {
       await this.flashcardTagRepo.add(flashcardId, tagId);
     } catch (e: any) {
-      if (e?.code === 'P2002') return { idempotent: true };
+      if (e?.code === 'P2002') {
+        // Could add log for return { idempotent: true };
+        return;
+      }
       throw e;
     }
   }
 
-  async removeTag(userId: string, flashcardId: string, tagId: string) {
+  async removeTag(
+    userId: string,
+    flashcardId: string,
+    tagId: string,
+  ): Promise<void> {
     // Validate ownership for safety (prevents removing someone else’s link)
     const card = await this.flashcardRepo.findByIdAndUser(flashcardId, userId);
     if (!card) throw new NotFoundException('Flashcard not found');
@@ -87,7 +103,7 @@ export class FlashcardService {
     await this.flashcardTagRepo.remove(flashcardId, tagId);
   }
 
-  async softDelete(userId: string, flashcardId: string) {
+  async softDelete(userId: string, flashcardId: string): Promise<void> {
     const flashcard = await this.flashcardRepo.findByIdAndUser(
       flashcardId,
       userId,
@@ -98,7 +114,6 @@ export class FlashcardService {
     flashcard.softDelete();
     await this.flashcardRepo.update(flashcard);
     await this.flashcardTagRepo.removeAllForFlashcard(flashcardId);
-    return true;
   }
 
   async create(userId: string, dto: CreateFlashcardDto): Promise<Flashcard> {
@@ -115,12 +130,15 @@ export class FlashcardService {
       null,
     );
 
-    const createdFlashcard = await this.flashcardRepo.create(flashcard);
-
-    return createdFlashcard;
+    return await this.flashcardRepo.create(flashcard);
   }
 
-  async edit(userId: string, flashcardId: string, front: string, back: string) {
+  async edit(
+    userId: string,
+    flashcardId: string,
+    front: string,
+    back: string,
+  ): Promise<Flashcard> {
     const flashcard = await this.flashcardRepo.findByIdAndUser(
       flashcardId,
       userId,
@@ -131,12 +149,33 @@ export class FlashcardService {
     return flashcard;
   }
 
-  async list(userId: string, rawPage = 1, rawSize = 20) {
-    const { skip, take } = normalizePagination(rawPage, rawSize);
-    return this.flashcardRepo.findManyByUser(userId, skip, take);
+  async list(
+    userId: string,
+    rawPage = 1,
+    rawSize = 20,
+  ): Promise<PaginatedResult<Flashcard>> {
+    const { page, size, skip } = normalizePagination(rawPage, rawSize);
+
+    const items = await this.flashcardRepo.findManyByUser(userId, skip, size);
+
+    const total = await this.flashcardRepo.count();
+
+    return {
+      items,
+      pagination: {
+        page,
+        size,
+        total,
+      },
+    };
   }
 
-  async listByTag(userId: string, tagId: string, rawPage = 1, rawSize = 20) {
+  async listByTag(
+    userId: string,
+    tagId: string,
+    rawPage = 1,
+    rawSize = 20,
+  ): Promise<ListAllFlashcardsInTag> {
     const tag = await this.tagRepo.findByIdAndUser(tagId, userId);
     if (!tag || !tag.isActive()) {
       throw new NotFoundException('Tag not found');
