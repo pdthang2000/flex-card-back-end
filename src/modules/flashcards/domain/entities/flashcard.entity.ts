@@ -1,4 +1,4 @@
-const CONTENT_MAX_LENGTH = 100;
+const CONTENT_MAX_LENGTH = 1000;
 
 export class Flashcard {
   constructor(
@@ -11,19 +11,19 @@ export class Flashcard {
     public deletedAt: Date | null = null,
   ) {
     if (front.length > CONTENT_MAX_LENGTH) {
-      throw new Error('Front must be <= 100 chars');
+      throw new Error(`Front must be <= ${CONTENT_MAX_LENGTH} chars`);
     }
     if (back.length > CONTENT_MAX_LENGTH) {
-      throw new Error('Back must be <= 100 chars');
+      throw new Error(`Back must be <= ${CONTENT_MAX_LENGTH} chars`);
     }
   }
 
   edit(front: string, back: string) {
     if (front.length > CONTENT_MAX_LENGTH) {
-      throw new Error('Front must be <= 100 chars');
+      throw new Error(`Front must be <= ${CONTENT_MAX_LENGTH} chars`);
     }
     if (back.length > CONTENT_MAX_LENGTH) {
-      throw new Error('Back must be <= 100 chars');
+      throw new Error(`Back must be <= ${CONTENT_MAX_LENGTH} chars`);
     }
     this.front = front;
     this.back = back;
