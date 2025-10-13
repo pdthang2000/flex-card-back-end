@@ -1,3 +1,5 @@
+import { Tag } from "./tag.entity";
+
 const CONTENT_MAX_LENGTH = 1000;
 
 export class Flashcard {
@@ -9,6 +11,7 @@ export class Flashcard {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt: Date | null = null,
+    private _tags: ReadonlyArray<Tag> | null = null,
   ) {
     if (front.length > CONTENT_MAX_LENGTH) {
       throw new Error(`Front must be <= ${CONTENT_MAX_LENGTH} chars`);
@@ -41,5 +44,9 @@ export class Flashcard {
 
   isActive(): boolean {
     return this.deletedAt === null;
+  }
+
+  get tags(): ReadonlyArray<Tag> | null {
+    return this._tags;
   }
 }

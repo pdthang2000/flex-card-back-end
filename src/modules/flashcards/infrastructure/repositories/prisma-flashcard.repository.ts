@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/shared/prisma.service';
 import { FlashcardRepository } from '../../domain/repositories/flashcard.repository.interface';
 import { Flashcard } from '../../domain/entities/flashcard.entity';
+import { Tag } from '../../domain/entities/tag.entity';
 
 @Injectable()
 export class PrismaFlashcardRepository implements FlashcardRepository {
@@ -10,7 +11,15 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
   async findByIdAndUser(id: string, userId: string): Promise<Flashcard | null> {
     const data = await this.prisma.flashcard.findFirst({
       where: { id, createdBy: userId, deletedAt: null },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
     });
+
     if (!data) return null;
     return new Flashcard(
       data.id,
@@ -20,6 +29,20 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
       data.createdAt,
       data.updatedAt,
       data.deletedAt,
+      data.tags
+        .map((flashcardTag) => flashcardTag.tag)
+        .filter((tag) => tag && tag.deletedAt === null)
+        .map(
+          (tag) =>
+            new Tag(
+              tag.id,
+              tag.name,
+              tag.createdBy,
+              tag.createdAt,
+              tag.updatedAt,
+              tag.deletedAt ?? null,
+            ),
+        ),
     );
   }
 
@@ -64,7 +87,15 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
       orderBy: { createdAt: 'desc' },
       skip,
       take,
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
     });
+    
     return rows.map(
       (row) =>
         new Flashcard(
@@ -75,6 +106,20 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
           row.createdAt,
           row.updatedAt,
           row.deletedAt,
+          row.tags
+            .map((flashcardTag) => flashcardTag.tag)
+            .filter((tag) => tag && tag.deletedAt === null)
+            .map(
+              (tag) =>
+                new Tag(
+                  tag.id,
+                  tag.name,
+                  tag.createdBy,
+                  tag.createdAt,
+                  tag.updatedAt,
+                  tag.deletedAt ?? null,
+                ),
+            ),
         ),
     );
   }
@@ -87,7 +132,15 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
     const rows = await this.prisma.flashcard.findMany({
       where: { id: { in: ids }, createdBy: userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
     });
+
     return rows.map(
       (row) =>
         new Flashcard(
@@ -98,6 +151,20 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
           row.createdAt,
           row.updatedAt,
           row.deletedAt ?? null,
+          row.tags
+            .map((flashcardTag) => flashcardTag.tag)
+            .filter((tag) => tag && tag.deletedAt === null)
+            .map(
+              (tag) =>
+                new Tag(
+                  tag.id,
+                  tag.name,
+                  tag.createdBy,
+                  tag.createdAt,
+                  tag.updatedAt,
+                  tag.deletedAt ?? null,
+                ),
+            ),
         ),
     );
   }
