@@ -9,7 +9,7 @@ export interface FlashcardTagRepository {
     take?: number,
   ): Promise<string[]>;
 
-  add(flashcardId: string, tagId: string): Promise<void>;
+  add(userId: string, flashcardId: string, tagId: string): Promise<void>;
 
   remove(flashcardId: string, tagId: string): Promise<void>;
 

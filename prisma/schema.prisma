@@ -13,8 +13,10 @@ model User {
   email      String      @unique
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+
   flashcards Flashcard[]
   tags       Tag[]
+  flashcardTag FlashcardTag[]
 }
 
 model Flashcard {
@@ -48,11 +50,14 @@ model FlashcardTag {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   flashcardId String   @map("flashcardId") @db.ObjectId
   tagId       String   @map("tagId") @db.ObjectId
+  createdBy   String   @map("createdBy") @db.ObjectId
   createdAt   DateTime @default(now())
 
   // Relations
   flashcard Flashcard @relation(fields: [flashcardId], references: [id])
   tag       Tag       @relation(fields: [tagId], references: [id])
+  user      User      @relation(fields: [createdBy], references: [id])
 
   @@unique([flashcardId, tagId])
+  @@index([createdBy, tagId, flashcardId, createdAt])   // <-- compound index
 }

@@ -11,15 +11,15 @@ import {
 } from '@nestjs/common';
 import { FlashcardService } from '../../application/services/flashcard.service';
 import { CreateFlashcardDto } from '../../application/dto/create-flashcard.dto';
-import { PaginationDto } from '../../../../dto/pagination.dto';
 import { ValidateObjectIdMongodb } from '../../../../common/pipes/validate-object-id-mongodb';
+import { ListFlashcardsDto } from '../../application/dto/list-flashcards.dto';
 
 @Controller('flashcard')
 export class FlashcardController {
   constructor(private readonly flashcardService: FlashcardService) {}
 
   @Get()
-  list(@Request() req: any, @Query() { page, size }: PaginationDto) {
+  list(@Request() req: any, @Query() { page, size }: ListFlashcardsDto) {
     // const userId = req.user?.id;
     const userId = '665ed96611f0733b07cc2df6';
     return this.flashcardService.list(req?.user?.id ?? userId, page, size);
