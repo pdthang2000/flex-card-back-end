@@ -7,7 +7,6 @@ export class PrismaFlashcardTagRepository implements FlashcardTagRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async add(userId: string, flashcardId: string, tagId: string): Promise<void> {
-    // unique pair enforced by @@unique([flashcardId, tagId]) in Prisma
     await this.prisma.flashcardTag.create({ data: { createdBy: userId, flashcardId, tagId } });
   }
 

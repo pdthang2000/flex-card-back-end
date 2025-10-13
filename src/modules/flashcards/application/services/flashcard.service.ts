@@ -133,16 +133,18 @@ export class FlashcardService {
     const created = await this.flashcardRepo.create(flashcard);
 
     if (dto.tagIds && dto.tagIds.length > 0) {
-      for (const tagId of dto.tagIds) {
-        try {
-          await this.assignTag(userId, created.id!, tagId);
-        } catch (e) {
-          console.error("Can't create FlashcardTag", e);
-          console.error("userId: ", userId);
-          console.error("tagId: ", tagId);
-          console.error("cardId: ", created.id);
-        }
-      }
+      await Promise.all(
+        dto.tagIds.map(async (tagId) => {
+          try {
+            await this.assignTag(userId, created.id!, tagId);
+          } catch (e) {
+            console.error("Can't create FlashcardTag", e);
+            console.error("userId: ", userId);
+            console.error("tagId: ", tagId);
+            console.error("cardId: ", created.id);
+          }
+        }),
+      );
     }
 
     return created;
