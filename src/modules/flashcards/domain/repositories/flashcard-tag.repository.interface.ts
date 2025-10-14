@@ -22,4 +22,12 @@ export interface FlashcardTagRepository {
   countByTag(tagId: string): Promise<number>;
 
   exists(flashcardId: string, tagId: string): Promise<boolean>;
+
+  findFlashcardIdsByAllTagsPaged(
+    userId: string,
+    tagIds: string[],
+    skip: number,
+    take: number,
+    sort?: 'link' | 'card',
+  ): Promise<{ ids: string[]; total: number }>;
 }

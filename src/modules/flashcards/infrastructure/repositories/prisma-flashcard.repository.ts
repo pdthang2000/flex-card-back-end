@@ -95,7 +95,7 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
         },
       },
     });
-    
+
     return rows.map(
       (row) =>
         new Flashcard(
@@ -171,5 +171,54 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
 
   async count(): Promise<number> {
     return await this.prisma.flashcard.count({});
+  }
+
+  async findManyByIdsAndUserKeepOrder(
+    idsOrdered: string[],
+    userId: string,
+  ): Promise<Flashcard[]> {
+    if (!idsOrdered.length) return [];
+    const rows = await this.prisma.flashcard.findMany({
+      where: { id: { in: idsOrdered }, createdBy: userId, deletedAt: null },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    // Re-map to the same order the aggregate returned
+    const ordered = idsOrdered
+      .map((id) => byId.get(id))
+      .filter(Boolean) as typeof rows; // This removes any undefined results in case some ID in idsOrdered isn’t found in rows.
+
+    return ordered.map(
+      (row) =>
+        new Flashcard(
+          row.id,
+          row.front,
+          row.back,
+          row.createdBy,
+          row.createdAt,
+          row.updatedAt,
+          row.deletedAt ?? null,
+          row.tags
+            .map((flashcardTag) => flashcardTag.tag)
+            .filter((tag) => tag && tag.deletedAt === null)
+            .map(
+              (tag) =>
+                new Tag(
+                  tag.id,
+                  tag.name,
+                  tag.createdBy,
+                  tag.createdAt,
+                  tag.updatedAt,
+                  tag.deletedAt ?? null,
+                ),
+            ),
+        ),
+    );
   }
 }

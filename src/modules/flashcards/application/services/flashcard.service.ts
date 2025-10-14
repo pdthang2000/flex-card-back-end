@@ -136,7 +136,7 @@ export class FlashcardService {
       await Promise.all(
         dto.tagIds.map(async (tagId) => {
           try {
-            await this.assignTag(userId, created.id!, tagId);
+            await this.assignTag(userId, created.id, tagId);
           } catch (e) {
             console.error("Can't create FlashcardTag", e);
             console.error('userId: ', userId);
@@ -217,5 +217,35 @@ export class FlashcardService {
       pagination: { page, size, total },
       items,
     };
+  }
+
+  async listAllTagsFilter(
+    userId: string,
+    tagIds: string[],
+    rawPage = 1,
+    rawSize = 20,
+    sort: 'link' | 'card' = 'link',
+  ): Promise<PaginatedResult<Flashcard>> {
+    const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
+
+    const { ids, total } =
+      await this.flashcardTagRepo.findFlashcardIdsByAllTagsPaged(
+        userId,
+        tagIds,
+        skip,
+        take,
+        sort,
+      );
+
+    if (ids.length === 0) {
+      return { items: [], pagination: { page, size, total: 0 } };
+    }
+
+    const items = await this.flashcardRepo.findManyByIdsAndUserKeepOrder(
+      ids,
+      userId,
+    );
+
+    return { items, pagination: { page, size, total } };
   }
 }

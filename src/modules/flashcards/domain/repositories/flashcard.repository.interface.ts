@@ -18,4 +18,9 @@ export interface FlashcardRepository {
   update(flashcard: Flashcard): Promise<void>;
 
   count(): Promise<number>;
+
+  findManyByIdsAndUserKeepOrder(
+    idsOrdered: string[],
+    userId: string,
+  ): Promise<Flashcard[]>;
 }
