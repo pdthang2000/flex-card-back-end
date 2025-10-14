@@ -25,7 +25,7 @@ export class FlashcardController {
       page: queries.page,
       size: queries.size,
       tagIds: queries.tagIds ?? [],
-      mode: queries.mode ?? 'any',
+      mode: queries.mode ?? 'all',
       sort: queries.sort ?? 'link',
     });
   }

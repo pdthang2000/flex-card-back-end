@@ -22,6 +22,7 @@ import { TaggingPolicy } from '../../domain/services/tagging-policy.domain-servi
 import { normalizePagination } from '../../../../common/utils/pagination.helper';
 import { ListAllFlashcardsInTag } from '../../../../common/types/tag.type';
 import { PaginatedResult } from '../../../../common/types/pagination-result.type';
+import { FlashcardListQuery } from '../types/flashcard-list.query';
 
 @Injectable()
 export class FlashcardService {
@@ -174,13 +175,7 @@ export class FlashcardService {
       tagIds = [],
       mode = 'all',
       sort = 'link',
-    }: {
-      page?: number;
-      size?: number;
-      tagIds?: string[];
-      mode?: 'all' | 'any';
-      sort?: 'link' | 'card';
-    },
+    }: FlashcardListQuery,
   ): Promise<PaginatedResult<Flashcard>> {
     const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
 
