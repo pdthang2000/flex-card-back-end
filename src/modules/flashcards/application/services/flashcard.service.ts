@@ -139,9 +139,9 @@ export class FlashcardService {
             await this.assignTag(userId, created.id!, tagId);
           } catch (e) {
             console.error("Can't create FlashcardTag", e);
-            console.error("userId: ", userId);
-            console.error("tagId: ", tagId);
-            console.error("cardId: ", created.id);
+            console.error('userId: ', userId);
+            console.error('tagId: ', tagId);
+            console.error('cardId: ', created.id);
           }
         }),
       );

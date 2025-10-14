@@ -9,8 +9,11 @@ export class CreateFlashcardDto {
   @IsString()
   @MaxLength(1000)
   back: string;
+
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : undefined))
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value : value ? [value] : undefined,
+  )
   @IsArray()
   @IsString({ each: true })
   tagIds?: string[];
