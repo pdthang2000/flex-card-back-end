@@ -168,23 +168,51 @@ export class FlashcardService {
 
   async list(
     userId: string,
-    rawPage = 1,
-    rawSize = 20,
+    {
+      page: rawPage = 1,
+      size: rawSize = 20,
+      tagIds = [],
+      mode = 'all',
+      sort = 'link',
+    }: {
+      page?: number;
+      size?: number;
+      tagIds?: string[];
+      mode?: 'all' | 'any';
+      sort?: 'link' | 'card';
+    },
   ): Promise<PaginatedResult<Flashcard>> {
-    const { page, size, skip } = normalizePagination(rawPage, rawSize);
+    const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
 
-    const items = await this.flashcardRepo.findManyByUser(userId, skip, size);
+    // Fast path: no tag filters
+    if (!tagIds?.length) {
+      const [items, total] = await Promise.all([
+        this.flashcardRepo.findManyByUser(userId, skip, take),
+        this.flashcardRepo.countByUser(userId),
+      ]);
+      return { items, pagination: { page, size, total } };
+    }
 
-    const total = await this.flashcardRepo.count();
+    // With tag filters
+    const finder =
+      mode === 'all'
+        ? this.flashcardTagRepo.findFlashcardIdsByAllTagsPaged.bind(
+            this.flashcardTagRepo,
+          )
+        : this.flashcardTagRepo.findFlashcardIdsByAnyTagPaged.bind(
+            this.flashcardTagRepo,
+          );
 
-    return {
-      items,
-      pagination: {
-        page,
-        size,
-        total,
-      },
-    };
+    const { ids, total } = await finder(userId, tagIds, skip, take, sort);
+    if (!ids.length) {
+      return { items: [], pagination: { page, size, total } };
+    }
+
+    const items = await this.flashcardRepo.findManyByIdsAndUserKeepOrder(
+      ids,
+      userId,
+    );
+    return { items, pagination: { page, size, total } };
   }
 
   async listByTag(
@@ -217,35 +245,5 @@ export class FlashcardService {
       pagination: { page, size, total },
       items,
     };
-  }
-
-  async listAllTagsFilter(
-    userId: string,
-    tagIds: string[],
-    rawPage = 1,
-    rawSize = 20,
-    sort: 'link' | 'card' = 'link',
-  ): Promise<PaginatedResult<Flashcard>> {
-    const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
-
-    const { ids, total } =
-      await this.flashcardTagRepo.findFlashcardIdsByAllTagsPaged(
-        userId,
-        tagIds,
-        skip,
-        take,
-        sort,
-      );
-
-    if (ids.length === 0) {
-      return { items: [], pagination: { page, size, total: 0 } };
-    }
-
-    const items = await this.flashcardRepo.findManyByIdsAndUserKeepOrder(
-      ids,
-      userId,
-    );
-
-    return { items, pagination: { page, size, total } };
   }
 }

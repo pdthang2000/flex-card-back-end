@@ -30,4 +30,12 @@ export interface FlashcardTagRepository {
     take: number,
     sort?: 'link' | 'card',
   ): Promise<{ ids: string[]; total: number }>;
+
+  findFlashcardIdsByAnyTagPaged(
+    userId: string,
+    tagIds: string[],
+    skip: number,
+    take: number,
+    sort?: 'link' | 'card',
+  ): Promise<{ ids: string[]; total: number }>;
 }

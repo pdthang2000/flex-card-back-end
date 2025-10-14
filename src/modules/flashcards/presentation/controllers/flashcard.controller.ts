@@ -19,25 +19,15 @@ export class FlashcardController {
   constructor(private readonly flashcardService: FlashcardService) {}
 
   @Get()
-  list(
-    @Request() req: any,
-    @Query()
-    queries: ListFlashcardsDto,
-  ) {
+  list(@Request() req: any, @Query() queries: ListFlashcardsDto) {
     const userId = req?.user?.id ?? '665ed96611f0733b07cc2df6';
-
-    if (queries.tagIds?.length && queries.mode === 'all') {
-      return this.flashcardService.listAllTagsFilter(
-        userId,
-        queries.tagIds,
-        queries.page,
-        queries.size,
-        (queries as any).sort ?? 'link',
-      );
-    }
-
-    // existing fallback
-    return this.flashcardService.list(userId, queries.page, queries.size);
+    return this.flashcardService.list(userId, {
+      page: queries.page,
+      size: queries.size,
+      tagIds: queries.tagIds ?? [],
+      mode: queries.mode ?? 'any',
+      sort: queries.sort ?? 'link',
+    });
   }
 
   @Post()

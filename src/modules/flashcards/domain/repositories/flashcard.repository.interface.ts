@@ -19,6 +19,8 @@ export interface FlashcardRepository {
 
   count(): Promise<number>;
 
+  countByUser(userId: string): Promise<number>;
+
   findManyByIdsAndUserKeepOrder(
     idsOrdered: string[],
     userId: string,

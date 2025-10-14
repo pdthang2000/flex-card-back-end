@@ -173,6 +173,12 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
     return await this.prisma.flashcard.count({});
   }
 
+  async countByUser(userId: string): Promise<number> {
+    return await this.prisma.flashcard.count({
+      where: { createdBy: userId, deletedAt: null },
+    });
+  }
+
   async findManyByIdsAndUserKeepOrder(
     idsOrdered: string[],
     userId: string,

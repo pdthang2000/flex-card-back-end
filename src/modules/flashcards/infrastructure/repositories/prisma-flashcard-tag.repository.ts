@@ -142,4 +142,74 @@ export class PrismaFlashcardTagRepository implements FlashcardTagRepository {
 
     return { ids, total };
   }
+
+  async findFlashcardIdsByAnyTagPaged(
+    userId: string,
+    tagIds: string[],
+    skip: number,
+    take: number,
+    sort: 'link' | 'card' = 'link',
+  ): Promise<{ ids: string[]; total: number }> {
+    if (!tagIds?.length) return { ids: [], total: 0 };
+
+    const baseMatch = {
+      createdBy: { $oid: userId },
+      tagId: { $in: tagIds.map((id) => ({ $oid: id })) },
+    };
+
+    const groupStage = {
+      $group: {
+        _id: '$flashcardId',
+        c: { $sum: 1 },
+        latestLinkAt: { $max: '$createdAt' },
+      },
+    };
+
+    // ANY = at least 1 match
+    const mustHaveAny = { $match: { c: { $gte: 1 } } };
+
+    const sortAndFacetLink = [
+      { $sort: { latestLinkAt: -1, _id: 1 } },
+      {
+        $facet: {
+          total: [{ $count: 'count' }],
+          data: [{ $skip: skip }, { $limit: take }],
+        },
+      },
+    ];
+
+    const sortAndFacetCard = [
+      {
+        $lookup: {
+          from: 'Flashcard',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'f',
+        },
+      },
+      { $unwind: '$f' },
+      { $match: { 'f.createdBy': { $oid: userId }, 'f.deletedAt': null } },
+      { $sort: { 'f.createdAt': -1, _id: 1 } },
+      {
+        $facet: {
+          total: [{ $count: 'count' }],
+          data: [{ $skip: skip }, { $limit: take }],
+        },
+      },
+    ];
+
+    const pipeline =
+      sort === 'card'
+        ? [{ $match: baseMatch }, groupStage, mustHaveAny, ...sortAndFacetCard]
+        : [{ $match: baseMatch }, groupStage, mustHaveAny, ...sortAndFacetLink];
+
+    const agg: any = await this.prisma.flashcardTag.aggregateRaw({ pipeline });
+    const bucket =
+      Array.isArray(agg) && agg.length > 0 ? agg[0] : { total: [], data: [] };
+    const total = bucket.total?.[0]?.count ?? 0;
+    const ids: string[] =
+      (bucket.data ?? []).map((row: any) => row._id?.$oid ?? row._id) ?? [];
+
+    return { ids, total };
+  }
 }
