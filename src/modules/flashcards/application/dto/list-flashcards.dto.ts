@@ -8,8 +8,16 @@ export class ListFlashcardsDto extends PaginationDto {
     if (value === undefined || value === null) return undefined;
     const values = Array.isArray(value) ? value : [value];
     const normalized = values
-      .map((name) => (typeof name === 'string' ? name.trim() : ''))
+      .flatMap((item) =>
+        typeof item === 'string'
+          ? item
+              .split(',')
+              .map((name) => name.trim())
+              .filter((name) => !!name)
+          : [],
+      )
       .filter((name) => !!name);
+    console.log({ normalized });
     return normalized.length ? normalized : undefined;
   })
   @IsArray()

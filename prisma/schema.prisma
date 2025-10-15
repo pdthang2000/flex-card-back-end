@@ -60,5 +60,5 @@ model FlashcardTag {
   user      User      @relation(fields: [createdBy], references: [id])
 
   @@unique([flashcardId, tagId])
-  @@index([createdBy, tagId, flashcardId, createdAt]) // <-- compound index
+  @@index([createdBy, tagId, flashcardId, createdAt])
 }
