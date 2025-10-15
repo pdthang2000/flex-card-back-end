@@ -24,7 +24,7 @@ export class FlashcardController {
     return this.flashcardService.list(userId, {
       page: queries.page,
       size: queries.size,
-      tagIds: queries.tagIds ?? [],
+      tagNames: queries.tagNames ?? [],
       mode: queries.mode ?? 'all',
       sort: queries.sort ?? 'link',
     });

@@ -4,10 +4,17 @@ import { PaginationDto } from '../../../../dto/pagination.dto';
 
 export class ListFlashcardsDto extends PaginationDto {
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) return undefined;
+    const values = Array.isArray(value) ? value : [value];
+    const normalized = values
+      .map((name) => (typeof name === 'string' ? name.trim() : ''))
+      .filter((name) => !!name);
+    return normalized.length ? normalized : undefined;
+  })
   @IsArray()
   @IsString({ each: true })
-  tagIds?: string[];
+  tagNames?: string[];
 
   @IsOptional()
   @IsIn(['all', 'any'], { message: 'mode must be either "all" or "any"' })

@@ -1,7 +1,7 @@
 export type FlashcardListQuery = {
   page?: number;
   size?: number;
-  tagIds?: string[];
+  tagNames?: string[];
   mode?: 'all' | 'any';
   sort?: 'link' | 'card';
 };

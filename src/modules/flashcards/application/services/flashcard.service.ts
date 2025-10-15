@@ -172,20 +172,37 @@ export class FlashcardService {
     {
       page: rawPage = 1,
       size: rawSize = 20,
-      tagIds = [],
+      tagNames = [],
       mode = 'all',
       sort = 'link',
     }: FlashcardListQuery,
   ): Promise<PaginatedResult<Flashcard>> {
     const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
 
+    const normalizedTagNames =
+      tagNames?.map((name) => name?.trim()).filter((name) => !!name) ?? [];
+
     // Fast path: no tag filters
-    if (!tagIds?.length) {
+    if (!normalizedTagNames.length) {
       const [items, total] = await Promise.all([
         this.flashcardRepo.findManyByUser(userId, skip, take),
         this.flashcardRepo.countByUser(userId),
       ]);
       return { items, pagination: { page, size, total } };
+    }
+
+    const tags = await Promise.all(
+      normalizedTagNames.map((tagName) =>
+        this.tagRepo.findByNameAndUser(tagName, userId),
+      ),
+    );
+
+    const tagIds: string[] = [];
+    for (const tag of tags) {
+      if (!tag || !tag.isActive() || !tag.id) {
+        return { items: [], pagination: { page, size, total: 0 } };
+      }
+      tagIds.push(tag.id);
     }
 
     // With tag filters

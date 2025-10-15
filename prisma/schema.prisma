@@ -8,14 +8,14 @@ datasource db {
 }
 
 model User {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  email      String      @unique
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  flashcards Flashcard[]
-  tags       Tag[]
+  flashcards   Flashcard[]
+  tags         Tag[]
   flashcardTag FlashcardTag[]
 }
 
@@ -44,6 +44,7 @@ model Tag {
   flashcards FlashcardTag[]
 
   @@unique([createdBy, name]) // Tag name unique per user
+  @@index([name])
 }
 
 model FlashcardTag {
@@ -59,5 +60,5 @@ model FlashcardTag {
   user      User      @relation(fields: [createdBy], references: [id])
 
   @@unique([flashcardId, tagId])
-  @@index([createdBy, tagId, flashcardId, createdAt])   // <-- compound index
+  @@index([createdBy, tagId, flashcardId, createdAt]) // <-- compound index
 }
