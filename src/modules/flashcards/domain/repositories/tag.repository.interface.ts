@@ -7,6 +7,8 @@ export interface TagRepository {
 
   findByNameAndUser(name: string, userId: string): Promise<Tag | null>;
 
+  findByNamesAndUser(names: string[], userId: string): Promise<Tag[]>;
+
   create(tag: Tag): Promise<Tag>; // returns Tag with generated id
 
   update(tag: Tag): Promise<void>; // updates by id

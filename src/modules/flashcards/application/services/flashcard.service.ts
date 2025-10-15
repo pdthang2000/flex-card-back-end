@@ -191,14 +191,12 @@ export class FlashcardService {
       return { items, pagination: { page, size, total } };
     }
 
-    const tags = await Promise.all(
-      normalizedTagNames.map((tagName) =>
-        this.tagRepo.findByNameAndUser(tagName, userId),
-      ),
-    );
-
+    const uniqueTagNames = Array.from(new Set(normalizedTagNames));
+    const tags = await this.tagRepo.findByNamesAndUser(uniqueTagNames, userId);
+    const tagByName = new Map(tags.map((tag) => [tag.name, tag]));
     const tagIds: string[] = [];
-    for (const tag of tags) {
+    for (const tagName of uniqueTagNames) {
+      const tag = tagByName.get(tagName);
       if (!tag || !tag.isActive() || !tag.id) {
         return { items: [], pagination: { page, size, total: 0 } };
       }

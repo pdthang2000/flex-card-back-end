@@ -32,6 +32,16 @@ export class PrismaTagRepository implements TagRepository {
     return tag ? mapDbToDomain(tag) : null;
   }
 
+  async findByNamesAndUser(names: string[], userId: string): Promise<Tag[]> {
+    if (!names.length) {
+      return [];
+    }
+    const rows = await this.prisma.tag.findMany({
+      where: { name: { in: names }, createdBy: userId },
+    });
+    return rows.map(mapDbToDomain);
+  }
+
   async create(tag: Tag): Promise<Tag> {
     const created = await this.prisma.tag.create({
       data: {
