@@ -13,6 +13,7 @@ import { FlashcardService } from '../../application/services/flashcard.service';
 import { CreateFlashcardDto } from '../../application/dto/create-flashcard.dto';
 import { ValidateObjectIdMongodb } from '../../../../common/pipes/validate-object-id-mongodb';
 import { ListFlashcardsDto } from '../../application/dto/list-flashcards.dto';
+import { UpdateFlashcardDto } from '../../application/dto/update-flashcard.dto';
 
 @Controller('flashcard')
 export class FlashcardController {
@@ -70,10 +71,10 @@ export class FlashcardController {
   async edit(
     @Request() req: any,
     @Param('id', ValidateObjectIdMongodb) id: string,
-    @Body() body: { front: string; back: string },
+    @Body() body: UpdateFlashcardDto,
   ) {
-    const userId = req.user?.id;
-    return this.flashcardService.edit(userId, id, body.front, body.back);
+    const userId = req?.user?.id ?? '665ed96611f0733b07cc2df6';
+    return this.flashcardService.edit(userId, id, body);
   }
 
   @Delete(':id')

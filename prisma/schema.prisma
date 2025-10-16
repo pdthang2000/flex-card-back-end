@@ -20,31 +20,34 @@ model User {
 }
 
 model Flashcard {
-  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
   front     String
   back      String
-  createdBy String         @map("createdBy") @db.ObjectId
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdBy String    @map("createdBy") @db.ObjectId
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
-  // Relations
-  user      User           @relation(fields: [createdBy], references: [id])
-  tags      FlashcardTag[]
+
+  user User           @relation(fields: [createdBy], references: [id])
+  tags FlashcardTag[]
+
+  @@index([createdBy])
 }
 
 model Tag {
-  id         String         @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  createdBy  String         @map("createdBy") @db.ObjectId
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  deletedAt  DateTime?
-  // Relations
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  createdBy String    @map("createdBy") @db.ObjectId
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   user       User           @relation(fields: [createdBy], references: [id])
   flashcards FlashcardTag[]
 
   @@unique([createdBy, name]) // Tag name unique per user
   @@index([name])
+  @@index([createdBy])
 }
 
 model FlashcardTag {
@@ -54,11 +57,13 @@ model FlashcardTag {
   createdBy   String   @map("createdBy") @db.ObjectId
   createdAt   DateTime @default(now())
 
-  // Relations
   flashcard Flashcard @relation(fields: [flashcardId], references: [id])
   tag       Tag       @relation(fields: [tagId], references: [id])
   user      User      @relation(fields: [createdBy], references: [id])
 
   @@unique([flashcardId, tagId])
+  @@index([flashcardId])
+  @@index([tagId])
+  @@index([createdBy])
   @@index([createdBy, tagId, flashcardId, createdAt])
 }

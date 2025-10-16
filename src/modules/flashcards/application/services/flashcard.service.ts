@@ -9,7 +9,9 @@ import {
   FlashcardRepository,
 } from '../../domain/repositories/flashcard.repository.interface';
 import { Flashcard } from '../../domain/entities/flashcard.entity';
+import { Tag } from '../../domain/entities/tag.entity';
 import { CreateFlashcardDto } from '../dto/create-flashcard.dto';
+import { UpdateFlashcardDto } from '../dto/update-flashcard.dto';
 import {
   TAG_REPOSITORY,
   TagRepository,
@@ -154,17 +156,120 @@ export class FlashcardService {
   async edit(
     userId: string,
     flashcardId: string,
-    front: string,
-    back: string,
+    dto: UpdateFlashcardDto,
   ): Promise<Flashcard> {
     const flashcard = await this.flashcardRepo.findByIdAndUser(
       flashcardId,
       userId,
     );
     if (!flashcard) throw new NotFoundException('Flashcard not found');
-    flashcard.edit(front, back);
+    flashcard.edit(dto.front, dto.back);
     await this.flashcardRepo.update(flashcard);
-    return flashcard;
+
+    if (dto.tagNames !== undefined) {
+      await this.syncFlashcardTagsByNames(userId, flashcard, dto.tagNames);
+    }
+
+    const updated = await this.flashcardRepo.findByIdAndUser(
+      flashcardId,
+      userId,
+    );
+    return updated ?? flashcard;
+  }
+
+  private async syncFlashcardTagsByNames(
+    userId: string,
+    flashcard: Flashcard,
+    rawTagNames: string[],
+  ): Promise<void> {
+    if (!flashcard.id) {
+      throw new BadRequestException('Flashcard is missing identifier');
+    }
+    console.log(rawTagNames);
+
+    const normalizedTagNames =
+      rawTagNames
+        ?.map((name) => (typeof name === 'string' ? name.trim() : ''))
+        .filter((name) => !!name) ?? [];
+
+    if (!normalizedTagNames.length) {
+      await this.flashcardTagRepo.removeAllForFlashcard(flashcard.id);
+      return;
+    }
+
+    const uniqueTagNames = Array.from(new Set(normalizedTagNames));
+    if (uniqueTagNames.length > TaggingPolicy.maxTagsPerCard()) {
+      throw new BadRequestException('Tag limit reached');
+    }
+
+    const existingTags = await this.tagRepo.findByNamesAndUser(
+      uniqueTagNames,
+      userId,
+    );
+
+    const tagByName = new Map<string, Tag>();
+    const tagsToRestore: Tag[] = [];
+    for (const tag of existingTags) {
+      if (!tag) continue;
+      if (!tag.isActive()) {
+        tag.restore();
+        tagsToRestore.push(tag);
+      }
+      tagByName.set(tag.name, tag);
+    }
+
+    if (tagsToRestore.length) {
+      await Promise.all(tagsToRestore.map((tag) => this.tagRepo.update(tag)));
+    }
+
+    const missingNames = uniqueTagNames.filter((name) => !tagByName.has(name));
+    if (missingNames.length) {
+      const createdTags = await Promise.all(
+        missingNames.map((name) => {
+          const now = new Date();
+          const tag = new Tag(undefined, name, userId, now, now, null);
+          return this.tagRepo.create(tag);
+        }),
+      );
+      for (const tag of createdTags) {
+        tagByName.set(tag.name, tag);
+      }
+    }
+
+    const desiredTagIds = uniqueTagNames.map((name) => {
+      const tag = tagByName.get(name);
+      if (!tag?.id) {
+        throw new BadRequestException(`Tag "${name}" could not be resolved`);
+      }
+      return tag.id;
+    });
+
+    if (desiredTagIds.length > TaggingPolicy.maxTagsPerCard()) {
+      throw new BadRequestException('Tag limit reached');
+    }
+
+    const flashcardId = flashcard.id as string;
+    const currentTagIds = await this.flashcardTagRepo.listTagIdsForFlashcard(
+      flashcardId,
+    );
+
+    const desiredSet = new Set(desiredTagIds);
+    const toRemove = currentTagIds.filter((tagId) => !desiredSet.has(tagId));
+    if (toRemove.length) {
+      await Promise.all(
+        toRemove.map((tagId) =>
+          this.flashcardTagRepo.remove(flashcardId, tagId),
+        ),
+      );
+    }
+
+    const currentSet = new Set(currentTagIds);
+    const toAdd = desiredTagIds.filter((tagId) => !currentSet.has(tagId));
+    if (toAdd.length) {
+      for (const tagId of toAdd) {
+        await this.assignTag(userId, flashcardId, tagId);
+      }
+    }
   }
 
   async list(

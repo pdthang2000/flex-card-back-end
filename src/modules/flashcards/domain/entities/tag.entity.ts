@@ -26,6 +26,11 @@ export class Tag {
     this.deletedAt = new Date();
   }
 
+  restore() {
+    this.deletedAt = null;
+    this.updatedAt = new Date();
+  }
+
   isActive(): boolean {
     return this.deletedAt === null;
   }

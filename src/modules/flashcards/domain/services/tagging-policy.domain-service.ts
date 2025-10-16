@@ -1,6 +1,10 @@
 const MAX_TAGS_PER_CARD = 100;
 
 export class TaggingPolicy {
+  static maxTagsPerCard(): number {
+    return MAX_TAGS_PER_CARD;
+  }
+
   /**
    * Ensures we can assign a tag to a flashcard.
    * Throws an Error (domain error) if a rule is violated.
