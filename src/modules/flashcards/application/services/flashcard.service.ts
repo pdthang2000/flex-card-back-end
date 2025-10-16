@@ -135,22 +135,16 @@ export class FlashcardService {
 
     const created = await this.flashcardRepo.create(flashcard);
 
-    if (dto.tagIds && dto.tagIds.length > 0) {
-      await Promise.all(
-        dto.tagIds.map(async (tagId) => {
-          try {
-            await this.assignTag(userId, created.id, tagId);
-          } catch (e) {
-            console.error("Can't create FlashcardTag", e);
-            console.error('userId: ', userId);
-            console.error('tagId: ', tagId);
-            console.error('cardId: ', created.id);
-          }
-        }),
-      );
+    if (dto.tagNames !== undefined) {
+      await this.syncFlashcardTagsByNames(userId, created, dto.tagNames);
     }
 
-    return created;
+    const updated = await this.flashcardRepo.findByIdAndUser(
+      created.id as string,
+      userId,
+    );
+
+    return updated ?? created;
   }
 
   async edit(
@@ -185,7 +179,6 @@ export class FlashcardService {
     if (!flashcard.id) {
       throw new BadRequestException('Flashcard is missing identifier');
     }
-    console.log(rawTagNames);
 
     const normalizedTagNames =
       rawTagNames
