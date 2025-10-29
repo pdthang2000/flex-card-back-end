@@ -273,15 +273,57 @@ export class FlashcardService {
       tagNames = [],
       mode = 'all',
       sort = 'link',
+      frontContains,
+      backContains,
     }: FlashcardListQuery,
   ): Promise<PaginatedResult<Flashcard>> {
     const { page, size, skip, take } = normalizePagination(rawPage, rawSize);
 
     const normalizedTagNames =
       tagNames?.map((name) => name?.trim()).filter((name) => !!name) ?? [];
+    const tagIds: string[] = [];
+    if (normalizedTagNames.length) {
+      const uniqueTagNames = Array.from(new Set(normalizedTagNames));
+      const tags = await this.tagRepo.findByNamesAndUser(
+        uniqueTagNames,
+        userId,
+      );
+      const byName = new Map(tags.map((t) => [t.name, t]));
+      for (const name of uniqueTagNames) {
+        const t = byName.get(name);
+        if (!t || !t.isActive() || !t.id) {
+          return { items: [], pagination: { page, size, total: 0 } };
+        }
+        tagIds.push(t.id);
+      }
+    }
 
-    // Fast path: no tag filters
-    if (!normalizedTagNames.length) {
+    // If either field-specific filter exists → use Atlas Search path
+    const wantsFront = !!(frontContains && frontContains.trim().length);
+    const wantsBack = !!(backContains && backContains.trim().length);
+
+    if (wantsFront || wantsBack) {
+      const { ids, total } = await this.flashcardRepo.searchIdsByTextPaged(
+        userId,
+        {
+          frontContains,
+          backContains,
+          skip,
+          take,
+          tagIds,
+          mode,
+        },
+      );
+
+      if (!ids.length) return { items: [], pagination: { page, size, total } };
+      const items = await this.flashcardRepo.findManyByIdsAndUserKeepOrder(
+        ids,
+        userId,
+      );
+      return { items, pagination: { page, size, total } };
+    }
+
+    if (!tagIds.length) {
       const [items, total] = await Promise.all([
         this.flashcardRepo.findManyByUser(userId, skip, take),
         this.flashcardRepo.countByUser(userId),
@@ -289,19 +331,6 @@ export class FlashcardService {
       return { items, pagination: { page, size, total } };
     }
 
-    const uniqueTagNames = Array.from(new Set(normalizedTagNames));
-    const tags = await this.tagRepo.findByNamesAndUser(uniqueTagNames, userId);
-    const tagByName = new Map(tags.map((tag) => [tag.name, tag]));
-    const tagIds: string[] = [];
-    for (const tagName of uniqueTagNames) {
-      const tag = tagByName.get(tagName);
-      if (!tag || !tag.isActive() || !tag.id) {
-        return { items: [], pagination: { page, size, total: 0 } };
-      }
-      tagIds.push(tag.id);
-    }
-
-    // With tag filters
     const finder =
       mode === 'all'
         ? this.flashcardTagRepo.findFlashcardIdsByAllTagsPaged.bind(
@@ -312,10 +341,7 @@ export class FlashcardService {
           );
 
     const { ids, total } = await finder(userId, tagIds, skip, take, sort);
-    if (!ids.length) {
-      return { items: [], pagination: { page, size, total } };
-    }
-
+    if (!ids.length) return { items: [], pagination: { page, size, total } };
     const items = await this.flashcardRepo.findManyByIdsAndUserKeepOrder(
       ids,
       userId,

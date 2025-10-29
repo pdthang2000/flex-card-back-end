@@ -31,4 +31,12 @@ export class ListFlashcardsDto extends PaginationDto {
   @IsOptional()
   @IsIn(['link', 'card'], { message: 'sort must be either "link" or "card"' })
   sort?: 'link' | 'card';
+
+  @IsOptional()
+  @IsString()
+  frontContains?: string;
+
+  @IsOptional()
+  @IsString()
+  backContains?: string;
 }

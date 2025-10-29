@@ -227,4 +227,106 @@ export class PrismaFlashcardRepository implements FlashcardRepository {
         ),
     );
   }
+
+  async searchIdsByTextPaged(
+    userId: string,
+    {
+      frontContains,
+      backContains,
+      skip,
+      take,
+      tagIds = [],
+      mode = 'all',
+    }: {
+      frontContains?: string;
+      backContains?: string;
+      skip: number;
+      take: number;
+      tagIds?: string[];
+      mode?: 'all' | 'any';
+    },
+  ): Promise<{ ids: string[]; total: number }> {
+    // Build $search compound.must
+    const must: any[] = [
+      {
+        equals: { path: 'createdBy', value: { $oid: userId } },
+      },
+      {
+        // exclude soft-deleted
+        exists: { path: '_id' }, // placeholder to allow mustNot below
+      },
+    ];
+
+    // add field-specific text clauses (AND if both present)
+    if (frontContains && frontContains.trim().length) {
+      must.push({
+        text: { query: frontContains.trim(), path: 'front' },
+      });
+    }
+    if (backContains && backContains.trim().length) {
+      must.push({
+        text: { query: backContains.trim(), path: 'back' },
+      });
+    }
+
+    const pipeline: any[] = [
+      {
+        $search: {
+          index: 'default', // the Atlas Search index name shown in UI
+          compound: {
+            must,
+            mustNot: [{ exists: { path: 'deletedAt' } }],
+          },
+        },
+      },
+      { $sort: { score: { $meta: 'searchScore' }, _id: 1 } },
+    ];
+
+    // Optional tag filter after search
+    if (tagIds.length) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: 'FlashcardTag',
+            localField: '_id',
+            foreignField: 'flashcardId',
+            as: 'links',
+          },
+        },
+        {
+          $addFields: {
+            tagHits: {
+              $setIntersection: [
+                tagIds.map((id) => ({ $oid: id })),
+                { $map: { input: '$links', as: 'l', in: '$$l.tagId' } },
+              ],
+            },
+          },
+        },
+        mode === 'all'
+          ? {
+              $match: {
+                $expr: { $eq: [{ $size: '$tagHits' }, tagIds.length] },
+              },
+            }
+          : { $match: { $expr: { $gte: [{ $size: '$tagHits' }, 1] } } },
+      );
+    }
+
+    pipeline.push({
+      $facet: {
+        total: [{ $count: 'count' }],
+        data: [{ $skip: skip }, { $limit: take }, { $project: { _id: 1 } }],
+      },
+    });
+
+    const agg: any = await this.prisma.flashcard.aggregateRaw({ pipeline });
+    const bucket =
+      Array.isArray(agg) && agg.length ? agg[0] : { total: [], data: [] };
+    const total = bucket.total?.[0]?.count ?? 0;
+    const ids: string[] = (bucket.data ?? []).map(
+      (row: any) => row._id?.$oid ?? row._id,
+    );
+    return { ids, total };
+  }
 }

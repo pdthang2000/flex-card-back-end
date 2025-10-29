@@ -25,4 +25,20 @@ export interface FlashcardRepository {
     idsOrdered: string[],
     userId: string,
   ): Promise<Flashcard[]>;
+
+  /**
+   * Atlas Search over front/back with field-specific contains.
+   * AND semantics when both are provided.
+   */
+  searchIdsByTextPaged(
+    userId: string,
+    params: {
+      frontContains?: string;
+      backContains?: string;
+      skip: number;
+      take: number;
+      tagIds?: string[];
+      mode?: 'all' | 'any';
+    },
+  ): Promise<{ ids: string[]; total: number }>;
 }

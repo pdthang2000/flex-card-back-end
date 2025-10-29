@@ -19,6 +19,37 @@ import { UpdateFlashcardDto } from '../../application/dto/update-flashcard.dto';
 export class FlashcardController {
   constructor(private readonly flashcardService: FlashcardService) {}
 
+  @Get('test-search')
+  async testSearch(@Request() req: any, @Query('q') q: string) {
+    const userId = req?.user?.id ?? '665ed96611f0733b07cc2df6';
+    if (!q || q.trim().length === 0) {
+      return { message: 'Please provide ?q=term' };
+    }
+
+    const prisma = (this.flashcardService as any).flashcardRepo.prisma; // quick access
+    const results: any = await prisma.flashcard.aggregateRaw({
+      pipeline: [
+        {
+          $search: {
+            index: 'default',
+            compound: {
+              // filter: [
+              //   { equals: { path: 'createdBy', value: { $oid: userId } } },
+              // ],
+              mustNot: [{ exists: { path: 'deletedAt' } }],
+              should: [{ text: { query: q, path: ['front', 'back'] } }],
+              minimumShouldMatch: 1,
+            },
+          },
+        },
+        { $limit: 10 },
+        { $project: { front: 1, back: 1, score: { $meta: 'searchScore' } } },
+      ],
+    });
+
+    return { q, results };
+  }
+
   @Get()
   list(@Request() req: any, @Query() queries: ListFlashcardsDto) {
     const userId = req?.user?.id ?? '665ed96611f0733b07cc2df6';
@@ -28,6 +59,8 @@ export class FlashcardController {
       tagNames: queries.tagNames ?? [],
       mode: queries.mode ?? 'all',
       sort: queries.sort ?? 'link',
+      frontContains: queries.frontContains,
+      backContains: queries.backContains,
     });
   }
 
