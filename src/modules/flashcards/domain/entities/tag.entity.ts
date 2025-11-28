@@ -8,6 +8,7 @@ export class Tag {
     public createdAt: Date,
     public updatedAt: Date,
     public deletedAt: Date | null = null,
+    public flashcardCount?: number,
   ) {
     if (name.length > SET_NAME_MAX_LENGTH) {
       throw new Error(`Set name must be <= ${SET_NAME_MAX_LENGTH} characters`);

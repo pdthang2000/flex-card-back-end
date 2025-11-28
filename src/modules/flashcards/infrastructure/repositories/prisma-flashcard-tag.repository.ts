@@ -73,76 +73,58 @@ export class PrismaFlashcardTagRepository implements FlashcardTagRepository {
   ): Promise<{ ids: string[]; total: number }> {
     if (!tagIds?.length) return { ids: [], total: 0 };
 
-    // Common first stages — use the compound index:
-    //   { createdBy, tagId, flashcardId, createdAt }
-    const baseMatch = {
-      createdBy: { $oid: userId },
-      tagId: { $in: tagIds.map((id) => ({ $oid: id })) },
-    };
-    const groupStage = {
-      $group: {
-        _id: '$flashcardId',
-        c: { $sum: 1 },
-        latestLinkAt: { $max: '$createdAt' },
-      },
-    };
-    const mustHaveAll = { $match: { c: { $gte: tagIds.length } } };
+    const tagIdArray = tagIds; // uuid strings
 
-    // Branch sorting
-    const sortAndFacetLink = [
-      { $sort: { latestLinkAt: -1, _id: 1 } },
-      {
-        $facet: {
-          total: [{ $count: 'count' }],
-          data: [{ $skip: skip }, { $limit: take }],
-        },
-      },
-    ];
+    // Total count (ALL)
+    const totalRows = await this.prisma.$queryRaw<{ count: bigint }[]>`
+    SELECT COUNT(*)::bigint AS count FROM (
+      SELECT ft."flashcardId"
+      FROM "FlashcardTag" ft
+      WHERE ft."createdBy" = ${userId}::uuid
+          AND ft."tagId" = ANY(${tagIdArray}::uuid[])
+      GROUP BY ft."flashcardId"
+      HAVING COUNT(DISTINCT ft."tagId") = ${tagIdArray.length}
+    ) s;
+  `;
+    const total = Number(totalRows[0]?.count ?? 0);
 
-    // If you need to sort by Flashcard.createdAt, look up to Flashcard collection.
-    // Note: this is heavier than 'link' sort.
-    const sortAndFacetCard = [
-      {
-        $lookup: {
-          from: 'Flashcard',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'f',
-        },
-      },
-      { $unwind: '$f' },
-      { $match: { 'f.createdBy': { $oid: userId }, 'f.deletedAt': null } },
-      { $sort: { 'f.createdAt': -1, _id: 1 } },
-      {
-        $facet: {
-          total: [{ $count: 'count' }],
-          data: [{ $skip: skip }, { $limit: take }],
-        },
-      },
-    ];
+    if (total === 0) return { ids: [], total };
 
-    const pipeline =
-      sort === 'card'
-        ? [{ $match: baseMatch }, groupStage, mustHaveAll, ...sortAndFacetCard]
-        : [{ $match: baseMatch }, groupStage, mustHaveAll, ...sortAndFacetLink];
-
-    // Run aggregation on FlashcardTag
-    const agg: any = await this.prisma.flashcardTag.aggregateRaw({
-      pipeline,
-    });
-
-    // Normalize result
-    const bucket =
-      Array.isArray(agg) && agg.length > 0 ? agg[0] : { total: [], data: [] };
-    const total = bucket.total?.[0]?.count ?? 0;
-
-    // Extract ordered ids for the page
-    const ids: string[] =
-      (bucket.data ?? []).map((row: any) => row._id?.$oid ?? row._id) ?? [];
-
-    return { ids, total };
+    if (sort === 'link') {
+      // Sort by latest link time then id
+      const data = await this.prisma.$queryRaw<{ flashcardId: string }[]>`
+      SELECT s."flashcardId"
+      FROM (
+        SELECT ft."flashcardId", MAX(ft."createdAt") AS latest_link_at
+        FROM "FlashcardTag" ft
+        WHERE ft."createdBy" = ${userId}::uuid AND ft."tagId" = ANY(${tagIdArray}::uuid[])
+        GROUP BY ft."flashcardId"
+        HAVING COUNT(DISTINCT ft."tagId") = ${tagIdArray.length}
+      ) s
+      ORDER BY s.latest_link_at DESC, s."flashcardId" ASC
+      OFFSET ${skip} LIMIT ${take};
+    `;
+      return { ids: data.map((r) => r.flashcardId), total };
+    } else {
+      // Sort by Flashcard.createdAt (heavier join)
+      const data = await this.prisma.$queryRaw<{ flashcardId: string }[]>`
+      SELECT f.id AS "flashcardId"
+      FROM "Flashcard" f
+      WHERE f."createdBy" = ${userId}
+        AND f."deletedAt" IS NULL
+        AND f.id IN (
+          SELECT ft."flashcardId"
+          FROM "FlashcardTag" ft
+          WHERE ft."createdBy" = ${userId} AND ft."tagId" = ANY(${tagIdArray}::uuid[])
+          GROUP BY ft."flashcardId"
+          HAVING COUNT(DISTINCT ft."tagId") = ${tagIdArray.length}
+        )
+      ORDER BY f."createdAt" DESC, f.id ASC
+      OFFSET ${skip} LIMIT ${take};
+    `;
+      return { ids: data.map((r) => r.flashcardId), total };
+    }
   }
-
   async findFlashcardIdsByAnyTagPaged(
     userId: string,
     tagIds: string[],
@@ -152,64 +134,47 @@ export class PrismaFlashcardTagRepository implements FlashcardTagRepository {
   ): Promise<{ ids: string[]; total: number }> {
     if (!tagIds?.length) return { ids: [], total: 0 };
 
-    const baseMatch = {
-      createdBy: { $oid: userId },
-      tagId: { $in: tagIds.map((id) => ({ $oid: id })) },
-    };
+    const tagIdArray = tagIds;
 
-    const groupStage = {
-      $group: {
-        _id: '$flashcardId',
-        c: { $sum: 1 },
-        latestLinkAt: { $max: '$createdAt' },
-      },
-    };
+    const totalRows = await this.prisma.$queryRaw<{ count: bigint }[]>`
+    SELECT COUNT(*)::bigint AS count FROM (
+      SELECT DISTINCT ft."flashcardId"
+      FROM "FlashcardTag" ft
+      WHERE ft."createdBy" = ${userId} AND ft."tagId" = ANY(${tagIdArray}::uuid[])
+    ) s;
+  `;
+    const total = Number(totalRows[0]?.count ?? 0);
+    if (total === 0) return { ids: [], total };
 
-    // ANY = at least 1 match
-    const mustHaveAny = { $match: { c: { $gte: 1 } } };
-
-    const sortAndFacetLink = [
-      { $sort: { latestLinkAt: -1, _id: 1 } },
-      {
-        $facet: {
-          total: [{ $count: 'count' }],
-          data: [{ $skip: skip }, { $limit: take }],
-        },
-      },
-    ];
-
-    const sortAndFacetCard = [
-      {
-        $lookup: {
-          from: 'Flashcard',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'f',
-        },
-      },
-      { $unwind: '$f' },
-      { $match: { 'f.createdBy': { $oid: userId }, 'f.deletedAt': null } },
-      { $sort: { 'f.createdAt': -1, _id: 1 } },
-      {
-        $facet: {
-          total: [{ $count: 'count' }],
-          data: [{ $skip: skip }, { $limit: take }],
-        },
-      },
-    ];
-
-    const pipeline =
-      sort === 'card'
-        ? [{ $match: baseMatch }, groupStage, mustHaveAny, ...sortAndFacetCard]
-        : [{ $match: baseMatch }, groupStage, mustHaveAny, ...sortAndFacetLink];
-
-    const agg: any = await this.prisma.flashcardTag.aggregateRaw({ pipeline });
-    const bucket =
-      Array.isArray(agg) && agg.length > 0 ? agg[0] : { total: [], data: [] };
-    const total = bucket.total?.[0]?.count ?? 0;
-    const ids: string[] =
-      (bucket.data ?? []).map((row: any) => row._id?.$oid ?? row._id) ?? [];
-
-    return { ids, total };
+    if (sort === 'link') {
+      const data = await this.prisma.$queryRaw<{ flashcardId: string }[]>`
+      SELECT s."flashcardId"
+      FROM (
+        SELECT ft."flashcardId", MAX(ft."createdAt") AS latest_link_at
+        FROM "FlashcardTag" ft
+        WHERE ft."createdBy" = ${userId} AND ft."tagId" = ANY(${tagIdArray}::uuid[])
+        GROUP BY ft."flashcardId"
+      ) s
+      ORDER BY s.latest_link_at DESC, s."flashcardId" ASC
+      OFFSET ${skip} LIMIT ${take};
+    `;
+      return { ids: data.map((r) => r.flashcardId), total };
+    } else {
+      const data = await this.prisma.$queryRaw<{ flashcardId: string }[]>`
+      SELECT f.id AS "flashcardId"
+      FROM "Flashcard" f
+      WHERE f."createdBy" = ${userId}
+        AND f."deletedAt" IS NULL
+        AND EXISTS (
+          SELECT 1 FROM "FlashcardTag" ft
+          WHERE ft."flashcardId" = f.id
+            AND ft."createdBy" = ${userId}
+            AND ft."tagId" = ANY(${tagIdArray}::uuid[])
+        )
+      ORDER BY f."createdAt" DESC, f.id ASC
+      OFFSET ${skip} LIMIT ${take};
+    `;
+      return { ids: data.map((r) => r.flashcardId), total };
+    }
   }
 }

@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid()) @db.Uuid
   name      String
   email     String   @unique
   createdAt DateTime @default(now())
@@ -19,11 +19,23 @@ model User {
   flashcardTag FlashcardTag[]
 }
 
+model Tag {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  createdBy String    @db.Uuid
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user       User           @relation(fields: [createdBy], references: [id])
+  flashcards FlashcardTag[]
+}
+
 model Flashcard {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  id        String    @id @default(uuid()) @db.Uuid
   front     String
   back      String
-  createdBy String    @map("createdBy") @db.ObjectId
+  createdBy String    @db.Uuid
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -34,27 +46,11 @@ model Flashcard {
   @@index([createdBy])
 }
 
-model Tag {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  createdBy String    @map("createdBy") @db.ObjectId
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  user       User           @relation(fields: [createdBy], references: [id])
-  flashcards FlashcardTag[]
-
-  @@unique([createdBy, name]) // Tag name unique per user
-  @@index([name])
-  @@index([createdBy])
-}
-
 model FlashcardTag {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  flashcardId String   @map("flashcardId") @db.ObjectId
-  tagId       String   @map("tagId") @db.ObjectId
-  createdBy   String   @map("createdBy") @db.ObjectId
+  id          String   @id @default(uuid()) @db.Uuid
+  flashcardId String   @db.Uuid
+  tagId       String   @db.Uuid
+  createdBy   String   @db.Uuid
   createdAt   DateTime @default(now())
 
   flashcard Flashcard @relation(fields: [flashcardId], references: [id])
@@ -62,8 +58,4 @@ model FlashcardTag {
   user      User      @relation(fields: [createdBy], references: [id])
 
   @@unique([flashcardId, tagId])
-  @@index([flashcardId])
-  @@index([tagId])
-  @@index([createdBy])
-  @@index([createdBy, tagId, flashcardId, createdAt])
 }

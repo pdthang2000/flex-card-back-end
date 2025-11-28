@@ -3,7 +3,8 @@ import { PrismaService } from 'src/shared/prisma.service';
 import { TagRepository } from '../../domain/repositories/tag.repository.interface';
 import { Tag } from '../../domain/entities/tag.entity';
 import { Tag as TagModel } from '@prisma/client';
-function mapDbToDomain(tag: TagModel): Tag {
+import { Prisma } from '@prisma/client';
+function mapDbToDomain(tag: TagModel & { _count?: Prisma.TagCountOutputType }): Tag {
   return new Tag(
     tag.id,
     tag.name,
@@ -11,6 +12,7 @@ function mapDbToDomain(tag: TagModel): Tag {
     tag.createdAt,
     tag.updatedAt,
     tag.deletedAt ?? null,
+    typeof tag._count?.flashcards === 'number' ? tag._count.flashcards : undefined,
   );
 }
 
@@ -38,6 +40,17 @@ export class PrismaTagRepository implements TagRepository {
     }
     const rows = await this.prisma.tag.findMany({
       where: { name: { in: names }, createdBy: userId },
+      include: {
+        _count: {
+          select: {
+            flashcards: {
+              where: { 
+                createdBy: userId,
+              },
+            },
+          },
+        },
+      },
     });
     return rows.map(mapDbToDomain);
   }
@@ -72,6 +85,15 @@ export class PrismaTagRepository implements TagRepository {
       orderBy: { createdAt: 'desc' },
       skip,
       take,
+      include: {
+        _count: {
+          select: {
+            flashcards: {
+              where: { createdBy: userId },
+            },
+          },
+        },
+      },
     });
     return rows.map(mapDbToDomain);
   }

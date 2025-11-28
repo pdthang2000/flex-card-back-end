@@ -26,7 +26,7 @@ export class TagController {
 
   @Get()
   list(@Request() req: any, @Query() { page, size }: PaginationDto) {
-    const userId = req?.user?.id ?? '665ed96611f0733b07cc2df6';
+    const userId = req?.user?.id ?? '8d9c3fb0-4e97-4857-94f5-eb3e9e4b17eb';
     return this.tagService.listTags(userId, page, size);
   }
 
@@ -36,7 +36,7 @@ export class TagController {
     @Param('id', ValidateObjectIdMongodb) id: string,
     @Query() query: ListFlashcardsInTagQueryDto,
   ) {
-    const userId = '665ed96611f0733b07cc2df6';
+    const userId = '8d9c3fb0-4e97-4857-94f5-eb3e9e4b17eb';
     return this.flashcardService.listByTag(
       req?.user?.id ?? userId,
       id,
@@ -47,7 +47,7 @@ export class TagController {
 
   @Post()
   create(@Request() req: any, @Body() dto: CreateTagDto) {
-    const userId = '665ed96611f0733b07cc2df6';
+    const userId = '8d9c3fb0-4e97-4857-94f5-eb3e9e4b17eb';
     return this.tagService.createTag(userId, dto.name);
   }
 
